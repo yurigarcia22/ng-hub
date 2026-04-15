@@ -21,7 +21,8 @@ export async function getCampaignsWithMetrics(
 
   let query = supabase
     .from('campaigns')
-    .select('id, name, status, objective, account_id')
+    .select('id, name, status, objective, account_id, ad_accounts(name)')
+    .order('account_id')
     .order('name')
 
   if (f.accountId) {
@@ -61,8 +62,14 @@ export async function getCampaignsWithMetrics(
   return campaigns.map(c => {
     const m = metricsMap.get(c.id)
     const count = m?.count ?? 1
+    const accountName = (c as unknown as { ad_accounts: { name: string } | null }).ad_accounts?.name ?? null
     return {
-      ...c,
+      id: c.id,
+      name: c.name,
+      status: c.status,
+      objective: c.objective,
+      account_id: c.account_id,
+      account_name: accountName,
       spend: m?.spend ?? 0,
       impressions: m?.impressions ?? 0,
       clicks: m?.clicks ?? 0,

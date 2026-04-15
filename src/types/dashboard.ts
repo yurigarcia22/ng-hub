@@ -6,6 +6,7 @@ export interface CampaignWithMetrics {
   status: string
   objective: string | null
   account_id: string
+  account_name: string | null
   spend: number
   impressions: number
   clicks: number
