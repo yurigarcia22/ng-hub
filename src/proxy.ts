@@ -1,61 +1,29 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
-export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const isAuthRoute = pathname.startsWith('/login')
+  const isApiRoute = pathname.startsWith('/api')
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
+  // Verifica se existe cookie de sessão Supabase
+  const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL
+    ?.replace('https://', '')
+    .split('.')[0] ?? ''
 
-  // getUser() faz chamada de rede — usa getSession() no middleware para evitar
-  // falhas intermitentes que causam loop de redirect
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user ?? null
+  const sessionCookie =
+    request.cookies.get(`sb-${projectRef}-auth-token`) ??
+    request.cookies.get(`sb-${projectRef}-auth-token.0`)
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api')
+  const hasSession = !!sessionCookie
 
   // Rota protegida sem sessão → redireciona para login
-  if (!user && !isAuthRoute && !isApiRoute) {
+  if (!hasSession && !isAuthRoute && !isApiRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    const redirectResponse = NextResponse.redirect(url)
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
-    })
-    return redirectResponse
+    return NextResponse.redirect(url)
   }
 
-  // Já autenticado tentando acessar login → redireciona para dashboard
-  if (user && isAuthRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    const redirectResponse = NextResponse.redirect(url)
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
-    })
-    return redirectResponse
-  }
-
-  return supabaseResponse
+  return NextResponse.next()
 }
 
 export const config = {
