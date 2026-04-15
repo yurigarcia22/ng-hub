@@ -1,35 +1,13 @@
-'use client'
+import { login } from '@/app/actions/auth'
+import SubmitButton from './submit-button'
 
-import { useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
-
-export default function LoginPage() {
-  const [error, setError] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setError(false)
-    setLoading(true)
-
-    const formData = new FormData(e.currentTarget)
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
-
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (signInError) {
-      setError(true)
-      setLoading(false)
-      return
-    }
-
-    window.location.href = '/'
-  }
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>
+}) {
+  const params = await searchParams
+  const hasError = params?.error === '1'
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-950">
@@ -42,7 +20,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form action={login} className="space-y-4">
           <div className="space-y-1">
             <label htmlFor="email" className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
               E-mail
@@ -73,19 +51,13 @@ export default function LoginPage() {
             />
           </div>
 
-          {error && (
+          {hasError && (
             <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
               <p className="text-sm text-red-400">E-mail ou senha incorretos.</p>
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
-          >
-            {loading ? 'Entrando...' : 'Entrar'}
-          </button>
+          <SubmitButton />
         </form>
 
         <p className="text-center text-xs text-zinc-600">Grupo NG — uso interno</p>
