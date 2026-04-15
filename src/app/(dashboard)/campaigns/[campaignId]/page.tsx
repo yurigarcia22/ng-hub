@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { getCampaignById, getAdSetsWithMetrics, getChartData, getLastSync } from '@/lib/supabase/queries'
 import Breadcrumb from '@/components/campaigns/Breadcrumb'
 import AdSetCard from '@/components/campaigns/AdSetCard'
@@ -16,20 +17,24 @@ interface PageProps {
   searchParams: Promise<Record<string, string>>
 }
 
-function fmt(value: number, type: 'currency' | 'percent' | 'number') {
-  if (type === 'currency') return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
-  if (type === 'percent') return `${value.toFixed(2)}%`
-  return new Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(value)
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { campaignId } = await params
+  const campaign = await getCampaignById(campaignId)
+  return { title: campaign?.name ?? 'Campanha' }
+}
+
+function fmtCurrency(v: number) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
+}
+function fmtCompact(v: number) {
+  return new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 }).format(v)
 }
 
 export default async function CampaignPage({ params, searchParams }: PageProps) {
   const { campaignId } = await params
   const sp = await searchParams
 
-  const filters: Partial<DashboardFilters> = {
-    since: sp.since,
-    until: sp.until
-  }
+  const filters: Partial<DashboardFilters> = { since: sp.since, until: sp.until }
   const filtersStr = new URLSearchParams(
     Object.fromEntries(Object.entries(sp).filter(([, v]) => v))
   ).toString()
@@ -43,16 +48,24 @@ export default async function CampaignPage({ params, searchParams }: PageProps) 
 
   if (!campaign) notFound()
 
-  // Agregar métricas totais dos conjuntos
   const totals = adSets.reduce((acc, s) => ({
     spend: acc.spend + s.spend,
     impressions: acc.impressions + s.impressions,
     clicks: acc.clicks + s.clicks,
-    reach: acc.reach + s.reach
+    reach: acc.reach + (s.reach ?? 0)
   }), { spend: 0, impressions: 0, clicks: 0, reach: 0 })
 
+  const hasData = totals.spend > 0 || totals.impressions > 0
+
+  const summaryMetrics = [
+    { label: 'Gasto Total', value: fmtCurrency(totals.spend), prominent: true },
+    { label: 'Impressões', value: fmtCompact(totals.impressions) },
+    { label: 'Cliques', value: fmtCompact(totals.clicks) },
+    { label: 'Alcance', value: fmtCompact(totals.reach) },
+  ]
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="space-y-2">
@@ -63,12 +76,12 @@ export default async function CampaignPage({ params, searchParams }: PageProps) 
             ]}
             filters={filtersStr}
           />
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-white">{campaign.name}</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-xl font-bold text-white tracking-tight">{campaign.name}</h1>
             <MetricsBadge status={campaign.status} />
           </div>
           {campaign.objective && (
-            <p className="text-sm text-zinc-500">{campaign.objective}</p>
+            <p className="text-xs text-zinc-500 uppercase tracking-wider">{campaign.objective}</p>
           )}
         </div>
         <div className="flex items-center gap-3">
@@ -77,37 +90,43 @@ export default async function CampaignPage({ params, searchParams }: PageProps) 
         </div>
       </div>
 
-      {/* Métricas totais */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: 'Gasto Total', value: fmt(totals.spend, 'currency') },
-          { label: 'Impressões', value: fmt(totals.impressions, 'number') },
-          { label: 'Cliques', value: fmt(totals.clicks, 'number') },
-          { label: 'Alcance', value: fmt(totals.reach, 'number') }
-        ].map(m => (
-          <div key={m.label} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider">{m.label}</p>
-            <p className={`text-lg font-bold mt-1 ${totals.spend === 0 ? 'text-zinc-500' : 'text-white'}`}>
+      {/* Summary metrics */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {summaryMetrics.map(m => (
+          <div key={m.label} className="rounded-xl border border-zinc-800/60 bg-zinc-900/60 p-4">
+            <p className="text-[10px] uppercase tracking-widest text-zinc-600 font-medium mb-1.5">{m.label}</p>
+            <p className={`font-bold tabular-nums ${m.prominent ? 'text-2xl text-white' : `text-lg ${hasData ? 'text-zinc-100' : 'text-zinc-700'}`}`}>
               {m.value}
             </p>
           </div>
         ))}
       </div>
 
-      {/* Gráfico */}
+      {/* Chart */}
       <PerformanceChart data={chartData} />
 
-      {/* Conjuntos de anúncios */}
+      {/* Ad Sets */}
       <div>
-        <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-3">
-          Conjuntos de Anúncios ({adSets.length})
-        </h2>
+        <div className="flex items-center gap-3 mb-3">
+          <h2 className="text-sm font-semibold text-zinc-300">Conjuntos de Anúncios</h2>
+          <span className="text-xs text-zinc-600 tabular-nums">
+            {adSets.length} {adSets.length === 1 ? 'conjunto' : 'conjuntos'}
+          </span>
+          <div className="flex-1 h-px bg-zinc-800/60" />
+        </div>
+
         {adSets.length === 0 ? (
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-8 text-center">
-            <p className="text-sm text-zinc-500">Nenhum conjunto de anúncios encontrado</p>
+          <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-10 text-center">
+            <div className="mx-auto w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center mb-3">
+              <svg className="w-5 h-5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+            <p className="text-sm text-zinc-500 font-medium">Nenhum conjunto de anúncios</p>
+            <p className="text-xs text-zinc-600 mt-1">Esta campanha não possui conjuntos no período selecionado.</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {adSets.map(adSet => (
               <AdSetCard
                 key={adSet.id}
@@ -122,7 +141,7 @@ export default async function CampaignPage({ params, searchParams }: PageProps) 
 
       <Link
         href={`/${filtersStr ? `?${filtersStr}` : ''}`}
-        className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition"
+        className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-200 transition-colors"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
