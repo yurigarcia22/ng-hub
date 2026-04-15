@@ -25,7 +25,10 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // getUser() faz chamada de rede — usa getSession() no middleware para evitar
+  // falhas intermitentes que causam loop de redirect
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user ?? null
 
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
   const isApiRoute = request.nextUrl.pathname.startsWith('/api')
@@ -35,7 +38,6 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     const redirectResponse = NextResponse.redirect(url)
-    // Copia cookies do supabaseResponse para manter sessão consistente
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
     })
