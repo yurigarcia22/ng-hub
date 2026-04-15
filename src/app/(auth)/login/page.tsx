@@ -1,12 +1,39 @@
-import { login } from '@/app/actions/auth'
+'use client'
 
-interface LoginPageProps {
-  searchParams: Promise<{ error?: string }>
-}
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createBrowserClient } from '@supabase/ssr'
 
-export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const params = await searchParams
-  const error = params?.error
+export default function LoginPage() {
+  const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError(false)
+    setLoading(true)
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (signInError) {
+      setError(true)
+      setLoading(false)
+      return
+    }
+
+    router.push('/')
+    router.refresh()
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-950">
@@ -19,7 +46,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </div>
 
         {/* Form */}
-        <form action={login} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
             <label htmlFor="email" className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
               E-mail
@@ -50,7 +77,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             />
           </div>
 
-          {/* Erro */}
           {error && (
             <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
               <p className="text-sm text-red-400">E-mail ou senha incorretos.</p>
@@ -59,9 +85,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           <button
             type="submit"
-            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
+            disabled={loading}
+            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
           >
-            Entrar
+            {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
 
