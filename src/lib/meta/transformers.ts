@@ -11,6 +11,7 @@ export function transformAccount(raw: {
   currency: string
   timezone_name: string
   account_status: number
+  business?: { id: string; name: string }
 }): Omit<AdAccount, 'created_at'> {
   return {
     id: raw.id,
@@ -18,6 +19,8 @@ export function transformAccount(raw: {
     currency: raw.currency,
     timezone: raw.timezone_name,
     status: accountStatus(raw.account_status),
+    business_id: raw.business?.id ?? null,
+    business_name: raw.business?.name ?? null,
     synced_at: new Date().toISOString()
   }
 }

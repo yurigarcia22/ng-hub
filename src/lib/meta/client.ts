@@ -54,11 +54,42 @@ async function metaFetchWithRetry<T>(
 
 // Retorna todas as contas vinculadas ao System User Token
 export async function getAdAccounts() {
-  const data = await metaFetchWithRetry<{ data: { id: string; name: string; currency: string; timezone_name: string; account_status: number }[] }>(
+  const data = await metaFetchWithRetry<{
+    data: {
+      id: string
+      name: string
+      currency: string
+      timezone_name: string
+      account_status: number
+      business?: { id: string; name: string }
+    }[]
+  }>(
     '/me/adaccounts',
-    { fields: 'id,name,currency,timezone_name,account_status', limit: '200' }
+    { fields: 'id,name,currency,timezone_name,account_status,business', limit: '200' }
   )
   return data.data
+}
+
+// Busca saldo em tempo real das contas
+export async function getAccountBalances(accountIds: string[]) {
+  const results: Record<string, { balance: number; currency: string }> = {}
+  await Promise.allSettled(
+    accountIds.map(async id => {
+      try {
+        const data = await metaFetchWithRetry<{ balance: string; currency: string }>(
+          `/${id}`,
+          { fields: 'balance,currency' }
+        )
+        results[id] = {
+          balance: parseFloat(data.balance ?? '0') / 100,
+          currency: data.currency ?? 'BRL',
+        }
+      } catch {
+        results[id] = { balance: 0, currency: 'BRL' }
+      }
+    })
+  )
+  return results
 }
 
 // Campanhas de uma conta

@@ -11,6 +11,8 @@ export interface Database {
           currency: string
           timezone: string
           status: string
+          business_id: string | null
+          business_name: string | null
           synced_at: string | null
           created_at: string
         }
@@ -20,6 +22,8 @@ export interface Database {
           currency?: string
           timezone?: string
           status?: string
+          business_id?: string | null
+          business_name?: string | null
           synced_at?: string | null
           created_at?: string
         }
@@ -29,8 +33,33 @@ export interface Database {
           currency?: string
           timezone?: string
           status?: string
+          business_id?: string | null
+          business_name?: string | null
           synced_at?: string | null
           created_at?: string
+        }
+        Relationships: []
+      }
+      account_settings: {
+        Row: {
+          user_id: string
+          account_id: string
+          visible: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          account_id: string
+          visible?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          account_id?: string
+          visible?: boolean
+          updated_at?: string
         }
         Relationships: []
       }
