@@ -4,8 +4,7 @@ export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
-})
-
+}) {
   return (
     <div className="min-h-screen bg-zinc-950">
       {/* Header */}
