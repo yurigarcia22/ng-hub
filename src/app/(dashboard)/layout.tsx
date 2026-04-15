@@ -1,12 +1,4 @@
-import type { Metadata } from 'next'
 import { logout } from '@/app/actions/auth'
-
-export const metadata: Metadata = {
-  title: {
-    template: '%s | NG Hub',
-    default: 'Campanhas | NG Hub'
-  }
-}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (

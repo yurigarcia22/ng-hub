@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { login } from '@/app/actions/auth'
 import SubmitButton from './submit-button'
 
-export const metadata: Metadata = { title: 'Login | NG Hub' }
+export const metadata: Metadata = { title: 'Login' }
 
 export default async function LoginPage({
   searchParams,
