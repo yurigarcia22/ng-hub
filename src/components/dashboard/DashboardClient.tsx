@@ -54,7 +54,6 @@ export default function DashboardClient({ lastSync }: Props) {
   const [since, setSince] = useState(daysAgo(30))
   const [until, setUntil] = useState(fmt(new Date()))
 
-  // Load hidden accounts from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('ng-hub:hidden-accounts')
     if (saved) {
@@ -62,7 +61,6 @@ export default function DashboardClient({ lastSync }: Props) {
     }
   }, [])
 
-  // Fetch account summaries
   const fetchAccounts = useCallback(async (s: string, u: string) => {
     setLoadingAccounts(true)
     try {
@@ -73,7 +71,6 @@ export default function DashboardClient({ lastSync }: Props) {
     }
   }, [])
 
-  // Fetch balances in background (non-blocking)
   const fetchBalances = useCallback(async () => {
     try {
       const res = await fetch('/api/accounts/balances')
@@ -81,7 +78,6 @@ export default function DashboardClient({ lastSync }: Props) {
     } catch { /* ignore */ }
   }, [])
 
-  // Fetch campaigns for selected account (or all)
   const fetchCampaigns = useCallback(async (s: string, u: string, accountId?: string | null) => {
     setLoadingCampaigns(true)
     try {
@@ -109,13 +105,11 @@ export default function DashboardClient({ lastSync }: Props) {
     if (p === '30d') { setSince(daysAgo(30)); setUntil(fmt(new Date())) }
   }
 
-  // Visible accounts (not hidden)
   const visibleAccounts = useMemo(() =>
     accounts.filter(a => !hiddenAccounts.has(a.id)),
     [accounts, hiddenAccounts]
   )
 
-  // Accounts with balance data merged
   const accountsWithBalance = useMemo(() =>
     visibleAccounts.map(a => ({
       ...a,
@@ -124,7 +118,6 @@ export default function DashboardClient({ lastSync }: Props) {
     [visibleAccounts, balances]
   )
 
-  // Client-side campaign filtering
   const filtered = useMemo(() => {
     let list = campaigns
     if (statusFilter === 'active') list = list.filter(c => c.status === 'ACTIVE')
@@ -136,7 +129,6 @@ export default function DashboardClient({ lastSync }: Props) {
     })
   }, [campaigns, statusFilter, selectedAccount])
 
-  // Summary for selected or all
   const summary = useMemo(() => {
     const src = selectedAccount
       ? accountsWithBalance.find(a => a.id === selectedAccount)
@@ -177,7 +169,7 @@ export default function DashboardClient({ lastSync }: Props) {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">Campanhas</h1>
+          <h1 className="text-3xl font-black text-white tracking-tight leading-none">Campanhas</h1>
           <div className="mt-1.5">
             <LastSyncInfo initial={lastSync} />
           </div>
@@ -185,7 +177,7 @@ export default function DashboardClient({ lastSync }: Props) {
         <div className="flex items-center gap-2">
           <Link
             href="/configuracoes"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 px-3 py-2 rounded-xl border border-white/[0.06] hover:border-white/[0.1] bg-[#111115] transition-colors"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -199,16 +191,16 @@ export default function DashboardClient({ lastSync }: Props) {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2.5">
-        <div className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+        <div className="flex items-center gap-0.5 bg-[#111115] border border-white/[0.06] rounded-xl p-1">
           {(['7d', '30d'] as Period[]).map(p => (
             <button key={p} onClick={() => applyPeriod(p)}
-              className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${period === p ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
+              className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${period === p ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'}`}
             >
               {p === '7d' ? '7 dias' : '30 dias'}
             </button>
           ))}
           <button onClick={() => setPeriod('custom')}
-            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${period === 'custom' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${period === 'custom' ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'}`}
           >
             Custom
           </button>
@@ -217,21 +209,21 @@ export default function DashboardClient({ lastSync }: Props) {
         {period === 'custom' && (
           <div className="flex items-center gap-2">
             <input type="date" value={since} max={until} onChange={e => setSince(e.target.value)}
-              className="text-xs bg-white border border-slate-200 text-slate-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-            <span className="text-slate-400 text-xs">→</span>
+              className="text-xs bg-[#111115] border border-white/[0.06] text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <span className="text-zinc-700 text-xs">→</span>
             <input type="date" value={until} min={since} max={fmt(new Date())} onChange={e => setUntil(e.target.value)}
-              className="text-xs bg-white border border-slate-200 text-slate-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              className="text-xs bg-[#111115] border border-white/[0.06] text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" />
           </div>
         )}
 
-        <div className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-xl p-1 shadow-sm sm:ml-auto">
+        <div className="flex items-center gap-0.5 bg-[#111115] border border-white/[0.06] rounded-xl p-1 sm:ml-auto">
           <button onClick={() => setStatusFilter('active')}
-            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${statusFilter === 'active' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${statusFilter === 'active' ? 'bg-emerald-600/80 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'}`}
           >
             Ativas
           </button>
           <button onClick={() => setStatusFilter('all')}
-            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${statusFilter === 'all' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${statusFilter === 'all' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'}`}
           >
             Todas
           </button>
@@ -242,19 +234,19 @@ export default function DashboardClient({ lastSync }: Props) {
       {loadingAccounts ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {[1,2,3,4,5].map(i => (
-            <div key={i} className="rounded-xl border border-slate-200 bg-slate-100/60 p-4 animate-pulse h-28" />
+            <div key={i} className="rounded-2xl border border-white/[0.05] bg-[#111115] p-4 animate-pulse h-28" />
           ))}
         </div>
       ) : accountsWithBalance.length > 0 ? (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">
+            <span className="text-xs font-medium text-zinc-600 uppercase tracking-widest">
               {selectedAccount ? 'Conta selecionada' : `${accountsWithBalance.length} contas`}
             </span>
             {selectedAccount && (
               <button
                 onClick={() => setSelectedAccount(null)}
-                className="text-xs text-blue-500 hover:text-blue-600 transition-colors flex items-center gap-1"
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -315,19 +307,19 @@ function SummaryCard({ label, value, muted, color, trend }: {
   const trendEl = (() => {
     if (trend === undefined || trend === null) return null
     const abs = Math.abs(trend)
-    if (abs < 0.5) return <p className="text-[10px] text-slate-400 mt-2">= período anterior</p>
+    if (abs < 0.5) return <p className="text-[10px] text-zinc-700 mt-2">= período anterior</p>
     const isPos = trend > 0
     return (
-      <p className={`text-[10px] mt-2 font-semibold ${isPos ? 'text-emerald-600' : 'text-red-500'}`}>
+      <p className={`text-[10px] mt-2 font-semibold ${isPos ? 'text-emerald-400' : 'text-red-400'}`}>
         {isPos ? '↑' : '↓'}{abs.toFixed(0)}% vs anterior
       </p>
     )
   })()
 
   return (
-    <div className={`rounded-2xl bg-white border-t-2 border border-slate-200 shadow-sm ${SUMMARY_TOP[color]} p-4`}>
-      <p className="text-[10px] uppercase tracking-widest text-slate-400 mb-3 font-medium">{label}</p>
-      <p className={`text-2xl font-black tabular-nums tracking-tight leading-none ${muted ? 'text-slate-300' : 'text-slate-900'}`}>{value}</p>
+    <div className={`rounded-2xl bg-[#111115] border-t-2 border border-white/[0.06] ${SUMMARY_TOP[color]} p-4`}>
+      <p className="text-[10px] uppercase tracking-widest text-zinc-600 mb-3 font-medium">{label}</p>
+      <p className={`text-2xl font-black tabular-nums tracking-tight leading-none ${muted ? 'text-zinc-700' : 'text-white'}`}>{value}</p>
       {trendEl}
     </div>
   )
@@ -337,14 +329,14 @@ function LoadingGroups() {
   return (
     <div className="space-y-2 animate-pulse">
       {[1, 2, 3].map(i => (
-        <div key={i} className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 pl-6">
+        <div key={i} className="rounded-2xl bg-[#111115] border border-white/[0.06] p-5 pl-6">
           <div className="flex justify-between mb-4">
-            <div className="h-4 bg-slate-100 rounded-lg w-1/2" />
-            <div className="h-4 bg-slate-100 rounded-lg w-16" />
+            <div className="h-4 bg-white/[0.05] rounded-lg w-1/2" />
+            <div className="h-4 bg-white/[0.05] rounded-lg w-16" />
           </div>
-          <div className="h-8 bg-slate-100 rounded-lg w-40 mb-4" />
+          <div className="h-8 bg-white/[0.04] rounded-lg w-40 mb-4" />
           <div className="grid grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(k => <div key={k} className="h-7 bg-slate-100 rounded-lg" />)}
+            {[1, 2, 3, 4].map(k => <div key={k} className="h-7 bg-white/[0.04] rounded-lg" />)}
           </div>
         </div>
       ))}
@@ -354,20 +346,20 @@ function LoadingGroups() {
 
 function EmptyState({ statusFilter, onShowAll }: { statusFilter: StatusFilter; onShowAll: () => void }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-16 text-center">
-      <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-        <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="rounded-2xl border border-white/[0.06] bg-[#111115] p-16 text-center">
+      <div className="mx-auto w-12 h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4">
+        <svg className="w-5 h-5 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       </div>
-      <h3 className="text-sm font-semibold text-slate-800 mb-1">
+      <h3 className="text-sm font-semibold text-white mb-1">
         {statusFilter === 'active' ? 'Nenhuma campanha ativa' : 'Nenhuma campanha encontrada'}
       </h3>
-      <p className="text-xs text-slate-400 mb-3">
+      <p className="text-xs text-zinc-600 mb-3">
         {statusFilter === 'active' ? 'Não há campanhas ativas no período.' : 'Tente ajustar os filtros.'}
       </p>
       {statusFilter === 'active' && (
-        <button onClick={onShowAll} className="text-xs text-blue-500 hover:text-blue-600 transition-colors font-medium">
+        <button onClick={onShowAll} className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium">
           Ver todas as campanhas
         </button>
       )}
