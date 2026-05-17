@@ -35,8 +35,11 @@ export default function SyncButton({ onSyncComplete }: Props) {
       const res = await fetch('/api/sync/status')
       if (!res.ok) continue
       const data = await res.json()
-      if (data.status !== 'running') return
+      if (data.status === 'success' || data.status === 'partial') return
+      if (data.status === 'failed') throw new Error('Sync failed on server')
+      // Still 'running' — continue polling
     }
+    throw new Error('Sync timed out after 3 minutes')
   }
 
   const config = {

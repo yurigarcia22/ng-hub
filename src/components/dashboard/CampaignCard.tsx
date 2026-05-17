@@ -22,78 +22,61 @@ function detectTemplate(c: CampaignWithMetrics): CampaignTemplate {
   return 'default'
 }
 
-// Acento lateral por template
-const TEMPLATE_ACCENT: Record<CampaignTemplate, string> = {
+const ACCENT: Record<CampaignTemplate, string> = {
   wpp: 'bg-emerald-500',
   leads: 'bg-violet-500',
   default: 'bg-blue-500',
 }
 
-// Dot indicador de saúde (semáforo discreto)
 function HealthDot({ level }: { level: HealthLevel }) {
-  const colors: Record<HealthLevel, string> = {
-    good: 'bg-emerald-500',
-    warning: 'bg-amber-400',
-    bad: 'bg-red-500',
-    neutral: 'bg-transparent',
-  }
+  const c: Record<HealthLevel, string> = { good: 'bg-emerald-500', warning: 'bg-amber-400', bad: 'bg-red-500', neutral: '' }
   if (level === 'neutral') return null
-  return <span className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${colors[level]}`} />
+  return <span className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${c[level]}`} />
 }
 
-// Tendência inline (sem fundo, só texto + seta)
 function Trend({ pct, invert = false, size = 'sm' }: { pct: number | null; invert?: boolean; size?: 'sm' | 'xs' }) {
   if (pct === null) return null
   const abs = Math.abs(pct)
   if (abs < 0.5) return null
   const isPos = pct > 0
   const isGood = invert ? !isPos : isPos
-  const cls = `${size === 'xs' ? 'text-[10px]' : 'text-xs'} font-medium tabular-nums ${isGood ? 'text-emerald-400' : 'text-red-400'}`
+  const cls = `${size === 'xs' ? 'text-[10px]' : 'text-xs'} font-semibold tabular-nums ${isGood ? 'text-emerald-600' : 'text-red-500'}`
   return <span className={cls}>{isPos ? '↑' : '↓'}{abs.toFixed(0)}%</span>
 }
 
-// Badge de template (compacto)
 function TemplateBadge({ template }: { template: CampaignTemplate }) {
   if (template === 'wpp') return (
-    <span className="text-[10px] font-bold tracking-widest text-emerald-500 uppercase">WPP</span>
+    <span className="text-[10px] font-bold tracking-widest text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md uppercase">WPP</span>
   )
   if (template === 'leads') return (
-    <span className="text-[10px] font-bold tracking-widest text-violet-400 uppercase">Leads</span>
+    <span className="text-[10px] font-bold tracking-widest text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md uppercase">Leads</span>
   )
   return null
 }
 
-// Badge de status inline (substituindo MetricsBadge)
 function StatusBadge({ status }: { status: string }) {
   const active = status === 'ACTIVE'
   const paused = status === 'PAUSED'
-  const dotColor = active ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.6)]' : paused ? 'bg-zinc-600' : 'bg-red-600'
+  const dot = active ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : paused ? 'bg-slate-300' : 'bg-red-400'
+  const text = active ? 'text-emerald-600' : paused ? 'text-slate-400' : 'text-red-500'
   const label = active ? 'Ativo' : paused ? 'Pausado' : status.charAt(0) + status.slice(1).toLowerCase()
-  const textColor = active ? 'text-emerald-400' : paused ? 'text-zinc-500' : 'text-red-400'
   return (
     <div className="flex items-center gap-1.5">
-      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
-      <span className={`text-xs ${textColor}`}>{label}</span>
+      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
+      <span className={`text-xs font-medium ${text}`}>{label}</span>
     </div>
   )
 }
 
-type MetricDef = {
-  label: string
-  value: string
-  muted?: boolean
-  health?: HealthLevel
-  trend?: number | null
-  trendInvert?: boolean
-}
+type MetricDef = { label: string; value: string; muted?: boolean; health?: HealthLevel; trend?: number | null; trendInvert?: boolean }
 
 function MetricCell({ label, value, muted, health, trend, trendInvert }: MetricDef) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-widest text-zinc-700 mb-1.5 font-medium">{label}</p>
+      <p className="text-[10px] uppercase tracking-widest text-slate-400 mb-1.5 font-medium">{label}</p>
       <div className="flex items-center gap-1.5">
         {health && health !== 'neutral' && <HealthDot level={health} />}
-        <span className={`text-sm font-semibold tabular-nums ${muted ? 'text-zinc-700' : 'text-zinc-100'}`}>{value}</span>
+        <span className={`text-sm font-semibold tabular-nums ${muted ? 'text-slate-300' : 'text-slate-800'}`}>{value}</span>
         {trend !== undefined && trend !== null && <Trend pct={trend} invert={trendInvert} size="xs" />}
       </div>
     </div>
@@ -111,10 +94,7 @@ export default function CampaignCard({ campaign, filters }: CampaignCardProps) {
   const template = detectTemplate(campaign)
   const hasRoas = campaign.roas > 1
   const spendTrend = trendPct(campaign.spend, campaign.prev_spend)
-
-  const accentActive = isActive ? TEMPLATE_ACCENT[template] : 'bg-zinc-800'
-
-  type MetricDef = { label: string; value: string; muted?: boolean; health?: HealthLevel; trend?: number | null; trendInvert?: boolean }
+  const accentBar = isActive ? ACCENT[template] : 'bg-slate-200'
 
   const primaryMetrics: MetricDef[] = (() => {
     if (template === 'wpp') {
@@ -151,48 +131,46 @@ export default function CampaignCard({ campaign, filters }: CampaignCardProps) {
   return (
     <Link
       href={`/campaigns/${campaign.id}${filters ? `?${filters}` : ''}`}
-      className="group relative block rounded-2xl bg-[#111113] border border-white/[0.06] hover:border-white/[0.11] hover:bg-[#131316] transition-all duration-200 overflow-hidden"
+      className="group relative block rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-md shadow-sm transition-all duration-200 overflow-hidden"
     >
-      {/* Acento lateral por template */}
-      <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentActive}`} />
+      {/* Acento lateral */}
+      <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentBar}`} />
 
       <div className="pl-5 pr-5 pt-4">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-start gap-2 min-w-0 flex-1">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                <TemplateBadge template={template} />
-                <h3 className="text-sm font-semibold text-zinc-100 truncate leading-snug">
-                  {campaign.name}
-                </h3>
-              </div>
-              {campaign.objective && (
-                <p className="text-[11px] text-zinc-600 truncate">{campaign.objective}</p>
-              )}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+              <TemplateBadge template={template} />
+              <h3 className="text-sm font-semibold text-slate-800 truncate leading-snug">
+                {campaign.name}
+              </h3>
             </div>
+            {campaign.objective && (
+              <p className="text-[11px] text-slate-400 truncate">{campaign.objective}</p>
+            )}
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             {hasRoas && (
-              <span className="text-xs font-bold text-amber-400 tabular-nums">{campaign.roas.toFixed(1)}x ROAS</span>
+              <span className="text-xs font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md tabular-nums">{campaign.roas.toFixed(1)}x ROAS</span>
             )}
             <StatusBadge status={campaign.status} />
           </div>
         </div>
 
-        {/* Spend — número herói */}
+        {/* Spend herói */}
         {hasData ? (
           <div className="mb-4">
             <div className="flex items-baseline gap-2.5">
-              <span className="text-[1.85rem] font-black text-white tabular-nums tracking-tight leading-none">
+              <span className="text-[1.85rem] font-black text-slate-900 tabular-nums tracking-tight leading-none">
                 {fmtCurrency(campaign.spend)}
               </span>
               <Trend pct={spendTrend} />
             </div>
-            <p className="text-[11px] text-zinc-600 mt-1">gastos no período</p>
+            <p className="text-[11px] text-slate-400 mt-1">gastos no período</p>
           </div>
         ) : (
-          <p className="text-sm text-zinc-700 italic mb-4">Sem dados no período selecionado</p>
+          <p className="text-sm text-slate-300 italic mb-4">Sem dados no período selecionado</p>
         )}
 
         {/* Métricas primárias */}
@@ -204,9 +182,9 @@ export default function CampaignCard({ campaign, filters }: CampaignCardProps) {
           </div>
         )}
 
-        {/* Métricas secundárias (frequência + extras) */}
+        {/* Métricas secundárias */}
         {hasData && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 pb-4 pt-3 border-t border-white/[0.04]">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 pb-4 pt-3 border-t border-slate-100">
             <MetricCell label="Frequência" value={freqVal} muted={campaign.frequency === 0} health={freqHealth} trendInvert />
             <MetricCell label="Alcance" value={fmtCompact(campaign.reach)} muted={campaign.reach === 0} />
             {template === 'default' && (
@@ -226,8 +204,8 @@ export default function CampaignCard({ campaign, filters }: CampaignCardProps) {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-white/[0.04] px-5 py-2.5 flex items-center justify-end">
-        <span className="text-xs text-zinc-700 group-hover:text-zinc-400 transition-colors flex items-center gap-1">
+      <div className="border-t border-slate-100 px-5 py-2.5 flex items-center justify-end bg-slate-50/50">
+        <span className="text-xs text-slate-400 group-hover:text-slate-600 transition-colors flex items-center gap-1">
           Ver conjuntos
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

@@ -16,6 +16,14 @@ function today() {
 export async function runSync(triggeredBy: 'cron' | 'manual' = 'manual') {
   const supabase = createServiceClient()
 
+  // Limpa syncs travados em 'running' há mais de 5 minutos (timeouts anteriores)
+  const staleThreshold = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+  await supabase
+    .from('sync_logs')
+    .update({ status: 'failed', error_message: 'Timeout — função encerrada pelo servidor' })
+    .eq('status', 'running')
+    .lt('started_at', staleThreshold)
+
   // Incremental: sincroniza a partir do último sync bem-sucedido (mínimo 2 dias de overlap)
   const { data: lastLog } = await supabase
     .from('sync_logs')
