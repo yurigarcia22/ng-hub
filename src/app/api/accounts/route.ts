@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       spend: totals.spend,
       activeCampaigns,
       totalCampaigns: totals.totalCampaigns,
-      balance: a.balance ?? 0,
+      balance: Number(a.balance ?? 0),
       hasIssues: a.has_issues ?? false,
     }
   })

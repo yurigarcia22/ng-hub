@@ -13,6 +13,58 @@ function defaultFilters(): DashboardFilters {
   }
 }
 
+export interface MetricsSummary {
+  spend: number; impressions: number; clicks: number; reach: number
+  ctr: number; cpm: number; cpa: number; roas: number
+  conversations: number; messages_sent: number; leads: number
+  page_views: number; frequency: number
+}
+
+function emptyMetrics(): MetricsSummary {
+  return { spend: 0, impressions: 0, clicks: 0, reach: 0, ctr: 0, cpm: 0, cpa: 0, roas: 0, conversations: 0, messages_sent: 0, leads: 0, page_views: 0, frequency: 0 }
+}
+
+function calcPrevPeriod(since: string, until: string) {
+  const s = new Date(since)
+  const u = new Date(until)
+  const days = Math.round((u.getTime() - s.getTime()) / 86400000)
+  const prevUntil = new Date(s); prevUntil.setDate(s.getDate() - 1)
+  const prevSince = new Date(prevUntil); prevSince.setDate(prevUntil.getDate() - days)
+  return {
+    prevSince: prevSince.toISOString().split('T')[0],
+    prevUntil: prevUntil.toISOString().split('T')[0],
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function aggregateRows(rows: any[] | null): MetricsSummary & { count: number } {
+  const agg = { ...emptyMetrics(), count: 0 }
+  for (const r of rows ?? []) {
+    agg.spend += Number(r.spend) || 0
+    agg.impressions += Number(r.impressions) || 0
+    agg.clicks += Number(r.clicks) || 0
+    agg.reach += Number(r.reach) || 0
+    agg.ctr += Number(r.ctr) || 0
+    agg.cpm += Number(r.cpm) || 0
+    agg.cpa += Number(r.cpa) || 0
+    agg.roas += Number(r.roas) || 0
+    agg.conversations += Number(r.conversations) || 0
+    agg.messages_sent += Number(r.messages_sent) || 0
+    agg.leads += Number(r.leads) || 0
+    agg.page_views += Number(r.page_views) || 0
+    agg.frequency += Number(r.frequency) || 0
+    agg.count++
+  }
+  if (agg.count > 0) {
+    agg.ctr /= agg.count
+    agg.cpm /= agg.count
+    agg.cpa /= agg.count
+    agg.roas /= agg.count
+    agg.frequency /= agg.count
+  }
+  return agg
+}
+
 export async function getCampaignsWithMetrics(
   filters?: Partial<DashboardFilters>
 ): Promise<CampaignWithMetrics[]> {
@@ -113,17 +165,19 @@ export async function getAdSetsWithMetrics(
 
   if (!adSets) return []
 
+  const COLS = 'entity_id, spend, impressions, clicks, reach, ctr, cpm, cpa, roas, conversations, messages_sent, leads, page_views, frequency'
   const { data: metrics } = await supabase
     .from('metrics')
-    .select('entity_id, spend, impressions, clicks, reach, ctr, cpm, frequency')
+    .select(COLS)
     .eq('entity_type', 'ad_set')
     .in('entity_id', adSets.map(s => s.id))
     .gte('date', f.since)
     .lte('date', f.until)
 
-  const metricsMap = new Map<string, { spend: number; impressions: number; clicks: number; reach: number; ctr: number; cpm: number; frequency: number; count: number }>()
+  type Acc = MetricsSummary & { count: number }
+  const metricsMap = new Map<string, Acc>()
   for (const m of metrics ?? []) {
-    const cur = metricsMap.get(m.entity_id) ?? { spend: 0, impressions: 0, clicks: 0, reach: 0, ctr: 0, cpm: 0, frequency: 0, count: 0 }
+    const cur = metricsMap.get(m.entity_id) ?? { ...emptyMetrics(), count: 0 }
     metricsMap.set(m.entity_id, {
       spend: cur.spend + (m.spend ?? 0),
       impressions: cur.impressions + (m.impressions ?? 0),
@@ -131,25 +185,71 @@ export async function getAdSetsWithMetrics(
       reach: cur.reach + (m.reach ?? 0),
       ctr: cur.ctr + (m.ctr ?? 0),
       cpm: cur.cpm + (m.cpm ?? 0),
+      cpa: cur.cpa + (m.cpa ?? 0),
+      roas: cur.roas + (m.roas ?? 0),
+      conversations: cur.conversations + (m.conversations ?? 0),
+      messages_sent: cur.messages_sent + (m.messages_sent ?? 0),
+      leads: cur.leads + (m.leads ?? 0),
+      page_views: cur.page_views + (m.page_views ?? 0),
       frequency: cur.frequency + (m.frequency ?? 0),
-      count: cur.count + 1
+      count: cur.count + 1,
     })
   }
 
   return adSets.map(s => {
     const m = metricsMap.get(s.id)
-    const count = m?.count ?? 1
+    const n = m?.count ?? 1
     return {
       ...s,
       spend: m?.spend ?? 0,
       impressions: m?.impressions ?? 0,
       clicks: m?.clicks ?? 0,
       reach: m?.reach ?? 0,
-      ctr: m ? m.ctr / count : 0,
-      cpm: m ? m.cpm / count : 0,
-      frequency: m ? m.frequency / count : 0,
+      ctr: m ? m.ctr / n : 0,
+      cpm: m ? m.cpm / n : 0,
+      cpa: m ? m.cpa / n : 0,
+      roas: m ? m.roas / n : 0,
+      conversations: m?.conversations ?? 0,
+      messages_sent: m?.messages_sent ?? 0,
+      leads: m?.leads ?? 0,
+      page_views: m?.page_views ?? 0,
+      frequency: m ? m.frequency / n : 0,
     }
   })
+}
+
+export async function getCampaignMetrics(
+  campaignId: string,
+  filters?: Partial<DashboardFilters>
+): Promise<{ current: MetricsSummary; prev: MetricsSummary }> {
+  const supabase = await createClient()
+  const f = { ...defaultFilters(), ...filters }
+  const { prevSince, prevUntil } = calcPrevPeriod(f.since, f.until)
+  const COLS = 'spend, impressions, clicks, reach, ctr, cpm, cpa, roas, conversations, messages_sent, leads, page_views, frequency'
+
+  const [{ data: cur }, { data: prv }] = await Promise.all([
+    supabase.from('metrics').select(COLS).eq('entity_id', campaignId).eq('entity_type', 'campaign').gte('date', f.since).lte('date', f.until),
+    supabase.from('metrics').select('spend, impressions, clicks, conversations, leads, ctr, cpm, frequency').eq('entity_id', campaignId).eq('entity_type', 'campaign').gte('date', prevSince).lte('date', prevUntil),
+  ])
+
+  return { current: aggregateRows(cur), prev: aggregateRows(prv) }
+}
+
+export async function getAdSetMetrics(
+  adSetId: string,
+  filters?: Partial<DashboardFilters>
+): Promise<{ current: MetricsSummary; prev: MetricsSummary }> {
+  const supabase = await createClient()
+  const f = { ...defaultFilters(), ...filters }
+  const { prevSince, prevUntil } = calcPrevPeriod(f.since, f.until)
+  const COLS = 'spend, impressions, clicks, reach, ctr, cpm, cpa, roas, conversations, messages_sent, leads, page_views, frequency'
+
+  const [{ data: cur }, { data: prv }] = await Promise.all([
+    supabase.from('metrics').select(COLS).eq('entity_id', adSetId).eq('entity_type', 'ad_set').gte('date', f.since).lte('date', f.until),
+    supabase.from('metrics').select('spend, impressions, clicks, conversations, leads').eq('entity_id', adSetId).eq('entity_type', 'ad_set').gte('date', prevSince).lte('date', prevUntil),
+  ])
+
+  return { current: aggregateRows(cur), prev: aggregateRows(prv) }
 }
 
 export async function getAdsWithMetrics(

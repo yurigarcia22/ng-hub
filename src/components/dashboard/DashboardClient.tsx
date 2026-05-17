@@ -249,6 +249,8 @@ export default function DashboardClient({ lastSync }: Props) {
                 account={account}
                 selected={selectedAccount === account.id}
                 onClick={() => handleAccountClick(account.id)}
+                since={since}
+                until={until}
               />
             ))}
           </div>

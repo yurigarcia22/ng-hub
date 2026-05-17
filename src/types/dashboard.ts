@@ -42,6 +42,12 @@ export interface AdSetWithMetrics {
   reach: number
   ctr: number
   cpm: number
+  cpa: number
+  roas: number
+  conversations: number
+  messages_sent: number
+  leads: number
+  page_views: number
   frequency: number
 }
 
