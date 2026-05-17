@@ -114,12 +114,29 @@ export async function getAccountBalances(accountIds: string[]) {
 export async function getCampaigns(accountId: string) {
   const data = await metaFetchWithRetry<{ data: { id: string; name: string; status: string; objective: string }[] }>(
     `/${accountId}/campaigns`,
-    { fields: 'id,name,status,objective', limit: '200' }
+    { fields: 'id,name,status,objective', limit: '500' }
   )
   return data.data
 }
 
-// Conjuntos de anúncios de uma campanha
+// Todos os conjuntos de anúncios de uma conta (mais rápido que por campanha)
+export async function getAdSetsByAccount(accountId: string) {
+  const all: { id: string; name: string; status: string; daily_budget?: string; campaign_id: string }[] = []
+  let after: string | undefined
+  while (true) {
+    const params: Record<string, string> = { fields: 'id,name,status,daily_budget,campaign_id', limit: '500' }
+    if (after) params.after = after
+    const data = await metaFetchWithRetry<{
+      data: { id: string; name: string; status: string; daily_budget?: string; campaign_id: string }[]
+      paging?: { cursors?: { after?: string }; next?: string }
+    }>(`/${accountId}/adsets`, params)
+    all.push(...data.data)
+    if (data.paging?.next && data.paging.cursors?.after) { after = data.paging.cursors.after } else { break }
+  }
+  return all
+}
+
+// Conjuntos de anúncios de uma campanha (mantido para página de detalhe)
 export async function getAdSets(campaignId: string) {
   const data = await metaFetchWithRetry<{ data: { id: string; name: string; status: string; daily_budget?: string }[] }>(
     `/${campaignId}/adsets`,
@@ -137,17 +154,79 @@ export async function getAds(adSetId: string) {
   return data.data
 }
 
-// Métricas de uma entidade por período
-export async function getInsights(
-  entityId: string,
-  since: string,
-  until: string
-) {
+type InsightRaw = {
+  date_start: string
+  spend: string
+  impressions: string
+  clicks: string
+  reach: string
+  frequency?: string
+  ctr: string
+  cpm: string
+  cost_per_action_type?: { action_type: string; value: string }[]
+  purchase_roas?: { action_type: string; value: string }[]
+  actions?: { action_type: string; value: string }[]
+}
+
+const INSIGHT_FIELDS = 'spend,impressions,clicks,reach,frequency,ctr,cpm,cost_per_action_type,purchase_roas,actions'
+
+// Insights de TODAS as campanhas de uma conta — uma única chamada de API
+export async function getAccountInsightsByCampaign(accountId: string, since: string, until: string) {
+  const all: (InsightRaw & { campaign_id: string })[] = []
+  let after: string | undefined
+  while (true) {
+    const params: Record<string, string> = {
+      level: 'campaign',
+      fields: `campaign_id,${INSIGHT_FIELDS}`,
+      time_increment: '1',
+      time_range: JSON.stringify({ since, until }),
+      limit: '500',
+    }
+    if (after) params.after = after
+    try {
+      const data = await metaFetchWithRetry<{
+        data: (InsightRaw & { campaign_id: string })[]
+        paging?: { cursors?: { after?: string }; next?: string }
+      }>(`/${accountId}/insights`, params)
+      all.push(...data.data)
+      if (data.paging?.next && data.paging.cursors?.after) { after = data.paging.cursors.after } else { break }
+    } catch { break }
+  }
+  return all
+}
+
+// Insights de TODOS os conjuntos de uma conta — uma única chamada de API
+export async function getAccountInsightsByAdset(accountId: string, since: string, until: string) {
+  const all: (InsightRaw & { adset_id: string })[] = []
+  let after: string | undefined
+  while (true) {
+    const params: Record<string, string> = {
+      level: 'adset',
+      fields: `adset_id,${INSIGHT_FIELDS}`,
+      time_increment: '1',
+      time_range: JSON.stringify({ since, until }),
+      limit: '500',
+    }
+    if (after) params.after = after
+    try {
+      const data = await metaFetchWithRetry<{
+        data: (InsightRaw & { adset_id: string })[]
+        paging?: { cursors?: { after?: string }; next?: string }
+      }>(`/${accountId}/insights`, params)
+      all.push(...data.data)
+      if (data.paging?.next && data.paging.cursors?.after) { after = data.paging.cursors.after } else { break }
+    } catch { break }
+  }
+  return all
+}
+
+// Métricas de uma entidade individual (para página de detalhe)
+export async function getInsights(entityId: string, since: string, until: string) {
   try {
-    const data = await metaFetchWithRetry<{ data: { date_start: string; date_stop: string; spend: string; impressions: string; clicks: string; reach: string; frequency: string; ctr: string; cpm: string; cost_per_action_type?: { action_type: string; value: string }[]; purchase_roas?: { action_type: string; value: string }[]; actions?: { action_type: string; value: string }[] }[] }>(
+    const data = await metaFetchWithRetry<{ data: (InsightRaw & { date_stop: string })[] }>(
       `/${entityId}/insights`,
       {
-        fields: 'spend,impressions,clicks,reach,frequency,ctr,cpm,cost_per_action_type,purchase_roas,actions',
+        fields: INSIGHT_FIELDS,
         time_increment: '1',
         time_range: JSON.stringify({ since, until }),
         limit: '90'

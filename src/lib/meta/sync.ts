@@ -1,28 +1,43 @@
 import 'server-only'
 import { createServiceClient } from '@/lib/supabase/service'
-import { providers } from '@/lib/providers'
 import * as meta from '@/lib/meta/client'
-import { transformAccount, transformCampaign, transformAdSet, transformAd, transformInsight } from './transformers'
+import { transformAccount, transformCampaign, transformAdSet, transformInsight } from './transformers'
 
-function dateRange(days: number) {
-  const until = new Date()
-  const since = new Date()
-  since.setDate(since.getDate() - days)
-  return {
-    since: since.toISOString().split('T')[0],
-    until: until.toISOString().split('T')[0]
-  }
+function daysAgo(n: number) {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  return d.toISOString().split('T')[0]
 }
 
-async function sleep(ms: number) {
-  return new Promise(r => setTimeout(r, ms))
+function today() {
+  return new Date().toISOString().split('T')[0]
 }
 
 export async function runSync(triggeredBy: 'cron' | 'manual' = 'manual') {
   const supabase = createServiceClient()
-  const range = dateRange(30)
 
-  // Criar log de sync
+  // Incremental: sincroniza a partir do último sync bem-sucedido (mínimo 2 dias de overlap)
+  const { data: lastLog } = await supabase
+    .from('sync_logs')
+    .select('started_at')
+    .in('status', ['success', 'partial'])
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  const until = today()
+  let since: string
+
+  if (lastLog?.started_at) {
+    const lastDate = new Date(lastLog.started_at)
+    lastDate.setDate(lastDate.getDate() - 2) // 2 dias de overlap para não perder dados
+    const candidate = lastDate.toISOString().split('T')[0]
+    const maxBack = daysAgo(30)
+    since = candidate < maxBack ? maxBack : candidate
+  } else {
+    since = daysAgo(30) // Primeiro sync: últimos 30 dias
+  }
+
   const { data: syncLog } = await supabase
     .from('sync_logs')
     .insert({ status: 'running', triggered_by: triggeredBy })
@@ -43,76 +58,56 @@ export async function runSync(triggeredBy: 'cron' | 'manual' = 'manual') {
         const account = transformAccount(rawAccount)
         await supabase.from('ad_accounts').upsert(account, { onConflict: 'id' })
 
-        // Buscar campanhas
+        // Upsert campanhas (estrutura)
         const rawCampaigns = await meta.getCampaigns(rawAccount.id)
-        for (const rawCampaign of rawCampaigns) {
-          const campaign = transformCampaign(rawCampaign, rawAccount.id)
-          await supabase.from('campaigns').upsert(
-            { ...campaign, updated_at: new Date().toISOString() },
-            { onConflict: 'id' }
-          )
+        if (rawCampaigns.length > 0) {
+          const campaigns = rawCampaigns.map(c => ({
+            ...transformCampaign(c, rawAccount.id),
+            updated_at: new Date().toISOString(),
+          }))
+          await supabase.from('campaigns').upsert(campaigns, { onConflict: 'id' })
+        }
 
-          // Métricas da campanha
-          const campaignInsights = await meta.getInsights(rawCampaign.id, range.since, range.until)
-          const campaignMetrics = campaignInsights.map(i => transformInsight(i, rawCampaign.id, 'campaign'))
-          if (campaignMetrics.length > 0) {
-            await supabase.from('metrics').upsert(campaignMetrics, { onConflict: 'entity_id,entity_type,date' })
-            recordsUpserted += campaignMetrics.length
-          }
+        // Upsert conjuntos (estrutura — TODOS de uma conta em 1 chamada)
+        const rawAdSets = await meta.getAdSetsByAccount(rawAccount.id)
+        if (rawAdSets.length > 0) {
+          const adSets = rawAdSets.map(s => ({
+            ...transformAdSet(s, s.campaign_id),
+            updated_at: new Date().toISOString(),
+          }))
+          await supabase.from('ad_sets').upsert(adSets, { onConflict: 'id' })
+        }
 
-          // Buscar conjuntos de anúncios
-          const rawAdSets = await meta.getAdSets(rawCampaign.id)
-          for (const rawAdSet of rawAdSets) {
-            const adSet = transformAdSet(rawAdSet, rawCampaign.id)
-            await supabase.from('ad_sets').upsert(
-              { ...adSet, updated_at: new Date().toISOString() },
-              { onConflict: 'id' }
-            )
+        // Métricas de campanhas — TODAS de uma conta em 1 chamada de API
+        const campaignInsights = await meta.getAccountInsightsByCampaign(rawAccount.id, since, until)
+        if (campaignInsights.length > 0) {
+          const metrics = campaignInsights.map(i => transformInsight(i, i.campaign_id, 'campaign'))
+          await supabase.from('metrics').upsert(metrics, { onConflict: 'entity_id,entity_type,date' })
+          recordsUpserted += metrics.length
+        }
 
-            // Métricas do conjunto
-            const adSetInsights = await meta.getInsights(rawAdSet.id, range.since, range.until)
-            const adSetMetrics = adSetInsights.map(i => transformInsight(i, rawAdSet.id, 'ad_set'))
-            if (adSetMetrics.length > 0) {
-              await supabase.from('metrics').upsert(adSetMetrics, { onConflict: 'entity_id,entity_type,date' })
-              recordsUpserted += adSetMetrics.length
-            }
-
-            // Buscar anúncios
-            const rawAds = await meta.getAds(rawAdSet.id)
-            for (const rawAd of rawAds) {
-              const ad = transformAd(rawAd, rawAdSet.id)
-              await supabase.from('ads').upsert(
-                { ...ad, updated_at: new Date().toISOString() },
-                { onConflict: 'id' }
-              )
-
-              // Métricas do anúncio
-              const adInsights = await meta.getInsights(rawAd.id, range.since, range.until)
-              const adMetrics = adInsights.map(i => transformInsight(i, rawAd.id, 'ad'))
-              if (adMetrics.length > 0) {
-                await supabase.from('metrics').upsert(adMetrics, { onConflict: 'entity_id,entity_type,date' })
-                recordsUpserted += adMetrics.length
-              }
-            }
-          }
+        // Métricas de conjuntos — TODOS de uma conta em 1 chamada de API
+        const adsetInsights = await meta.getAccountInsightsByAdset(rawAccount.id, since, until)
+        if (adsetInsights.length > 0) {
+          const metrics = adsetInsights.map(i => transformInsight(i, i.adset_id, 'ad_set'))
+          await supabase.from('metrics').upsert(metrics, { onConflict: 'entity_id,entity_type,date' })
+          recordsUpserted += metrics.length
         }
 
         accountsSynced++
-        await sleep(500) // Rate limit entre contas
       } catch (err) {
         console.error(`Erro ao sincronizar conta ${rawAccount.id}:`, err)
         hasErrors = true
       }
     }
 
-    // Atualizar log
     const status = hasErrors ? 'partial' : 'success'
     if (logId) {
       await supabase.from('sync_logs').update({
         status,
         finished_at: new Date().toISOString(),
         accounts_synced: accountsSynced,
-        records_upserted: recordsUpserted
+        records_upserted: recordsUpserted,
       }).eq('id', logId)
     }
 
@@ -123,7 +118,7 @@ export async function runSync(triggeredBy: 'cron' | 'manual' = 'manual') {
       await supabase.from('sync_logs').update({
         status: 'failed',
         finished_at: new Date().toISOString(),
-        error_message: errorMessage
+        error_message: errorMessage,
       }).eq('id', logId)
     }
     throw err
