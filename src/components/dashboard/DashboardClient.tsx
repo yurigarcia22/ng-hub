@@ -20,6 +20,7 @@ interface AccountSummary {
   activeCampaigns: number
   totalCampaigns: number
   balance?: number
+  hasIssues?: boolean
 }
 
 interface Props {
@@ -43,7 +44,6 @@ function fmtCompact(v: number) {
 
 export default function DashboardClient({ lastSync }: Props) {
   const [accounts, setAccounts] = useState<AccountSummary[]>([])
-  const [balances, setBalances] = useState<Record<string, { balance: number; currency: string }>>({})
   const [hiddenAccounts, setHiddenAccounts] = useState<Set<string>>(new Set())
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null)
   const [campaigns, setCampaigns] = useState<CampaignWithMetrics[]>([])
@@ -71,13 +71,6 @@ export default function DashboardClient({ lastSync }: Props) {
     }
   }, [])
 
-  const fetchBalances = useCallback(async () => {
-    try {
-      const res = await fetch('/api/accounts/balances')
-      if (res.ok) setBalances(await res.json())
-    } catch { /* ignore */ }
-  }, [])
-
   const fetchCampaigns = useCallback(async (s: string, u: string, accountId?: string | null) => {
     setLoadingCampaigns(true)
     try {
@@ -92,8 +85,7 @@ export default function DashboardClient({ lastSync }: Props) {
 
   useEffect(() => {
     fetchAccounts(since, until)
-    fetchBalances()
-  }, [since, until, fetchAccounts, fetchBalances])
+  }, [since, until, fetchAccounts])
 
   useEffect(() => {
     fetchCampaigns(since, until, selectedAccount)
@@ -110,17 +102,12 @@ export default function DashboardClient({ lastSync }: Props) {
     [accounts, hiddenAccounts]
   )
 
-  const accountsWithBalance = useMemo(() =>
-    visibleAccounts.map(a => ({
-      ...a,
-      balance: balances[a.id]?.balance
-    })),
-    [visibleAccounts, balances]
-  )
+  // balance + hasIssues já vêm de /api/accounts agora
+  const accountsWithBalance = visibleAccounts
 
   const filtered = useMemo(() => {
     let list = campaigns
-    if (statusFilter === 'active') list = list.filter(c => c.status === 'ACTIVE')
+    if (statusFilter === 'active') list = list.filter(c => (c.effective_status ?? c.status) === 'ACTIVE')
     if (selectedAccount) list = list.filter(c => c.account_id === selectedAccount)
     return [...list].sort((a, b) => {
       const so = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9)
@@ -185,7 +172,7 @@ export default function DashboardClient({ lastSync }: Props) {
             </svg>
             Contas
           </Link>
-          <SyncButton onSyncComplete={() => { fetchAccounts(since, until); fetchCampaigns(since, until, selectedAccount); fetchBalances() }} />
+          <SyncButton onSyncComplete={() => { fetchAccounts(since, until); fetchCampaigns(since, until, selectedAccount) }} />
         </div>
       </div>
 

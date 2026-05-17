@@ -12,7 +12,7 @@ export function transformAccount(raw: {
   timezone_name: string
   account_status: number
   business?: { id: string; name: string }
-}): Omit<AdAccount, 'created_at'> {
+}): Omit<AdAccount, 'created_at' | 'balance' | 'has_issues'> {
   return {
     id: raw.id,
     name: raw.name,

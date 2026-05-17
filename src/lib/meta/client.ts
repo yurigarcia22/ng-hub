@@ -88,44 +88,83 @@ export async function getAdAccounts() {
   return allAccounts
 }
 
-// Busca fundos disponíveis em tempo real das contas
-// funding_source_details.amount = fundos pré-pago disponíveis (o que aparece no Gerenciador de Anúncios)
+// Parse "Saldo disponível (R$107,98 BRL)" → 107.98
+function parseDisplayBalance(display?: string): number | null {
+  if (!display) return null
+  const m = display.match(/R\$\s*([\d.,]+)/)
+  if (!m) return null
+  const num = m[1].replace(/\./g, '').replace(',', '.')
+  const v = parseFloat(num)
+  return isNaN(v) ? null : v
+}
+
+// Busca saldo real + flag de problema (limite atingido)
+//  1. funding_source_details.amount (contas prepaid, type=2) — em centavos
+//  2. parse de funding_source_details.display_string (contas type=20 etc.) — formatado
+//  3. balance (último fallback) — em centavos
+// hasIssues = true quando amount_spent >= spend_cap (conta travada por limite)
 export async function getAccountBalances(accountIds: string[]) {
-  const results: Record<string, { balance: number; currency: string }> = {}
+  const results: Record<string, { balance: number; currency: string; hasIssues: boolean }> = {}
   await Promise.allSettled(
     accountIds.map(async id => {
       try {
         const data = await metaFetchWithRetry<{
           balance: string
           currency: string
-          funding_source_details?: { amount?: string; display_string?: string }
+          funding_source_details?: { amount?: string; display_string?: string; type?: number }
+          amount_spent?: string
+          spend_cap?: string
         }>(
           `/${id}`,
-          { fields: 'balance,currency,funding_source_details' }
+          { fields: 'balance,currency,funding_source_details,amount_spent,spend_cap' }
         )
-        // Preferir funding_source_details.amount (fundos pré-pago disponíveis)
-        // Fallback para balance (saldo da conta)
-        const raw = data.funding_source_details?.amount ?? data.balance ?? '0'
-        const amount = parseFloat(raw) / 100
+
+        let balance = 0
+        const amount = data.funding_source_details?.amount
+        if (amount && parseFloat(amount) > 0) {
+          balance = parseFloat(amount) / 100
+        } else {
+          const parsed = parseDisplayBalance(data.funding_source_details?.display_string)
+          if (parsed !== null && parsed > 0) {
+            balance = parsed
+          } else if (data.balance) {
+            const b = parseFloat(data.balance) / 100
+            if (b > 0) balance = b
+          }
+        }
+
+        const spent = parseFloat(data.amount_spent ?? '0')
+        const cap = parseFloat(data.spend_cap ?? '0')
+        const hasIssues = cap > 0 && spent >= cap
+
         results[id] = {
-          balance: amount > 0 ? amount : 0,
+          balance,
           currency: data.currency ?? 'BRL',
+          hasIssues,
         }
       } catch {
-        results[id] = { balance: 0, currency: 'BRL' }
+        results[id] = { balance: 0, currency: 'BRL', hasIssues: false }
       }
     })
   )
   return results
 }
 
-// Campanhas de uma conta (inclui effective_status para status real)
+// Campanhas de uma conta (inclui effective_status para status real, com paginação)
 export async function getCampaigns(accountId: string) {
-  const data = await metaFetchWithRetry<{ data: { id: string; name: string; status: string; effective_status: string; objective: string }[] }>(
-    `/${accountId}/campaigns`,
-    { fields: 'id,name,status,effective_status,objective', limit: '500' }
-  )
-  return data.data
+  const all: { id: string; name: string; status: string; effective_status: string; objective: string }[] = []
+  let after: string | undefined
+  while (true) {
+    const params: Record<string, string> = { fields: 'id,name,status,effective_status,objective', limit: '500' }
+    if (after) params.after = after
+    const data = await metaFetchWithRetry<{
+      data: { id: string; name: string; status: string; effective_status: string; objective: string }[]
+      paging?: { cursors?: { after?: string }; next?: string }
+    }>(`/${accountId}/campaigns`, params)
+    all.push(...data.data)
+    if (data.paging?.next && data.paging.cursors?.after) { after = data.paging.cursors.after } else { break }
+  }
+  return all
 }
 
 // Todos os conjuntos de anúncios de uma conta (mais rápido que por campanha)

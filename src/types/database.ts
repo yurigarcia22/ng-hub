@@ -15,6 +15,8 @@ export interface Database {
           business_name: string | null
           synced_at: string | null
           created_at: string
+          has_issues: boolean | null
+          balance: number | null
         }
         Insert: {
           id: string
@@ -26,6 +28,8 @@ export interface Database {
           business_name?: string | null
           synced_at?: string | null
           created_at?: string
+          has_issues?: boolean | null
+          balance?: number | null
         }
         Update: {
           id?: string
@@ -37,6 +41,8 @@ export interface Database {
           business_name?: string | null
           synced_at?: string | null
           created_at?: string
+          has_issues?: boolean | null
+          balance?: number | null
         }
         Relationships: []
       }

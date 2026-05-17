@@ -59,6 +59,9 @@ export async function runSync(triggeredBy: 'cron' | 'manual' = 'manual') {
   try {
     const rawAccounts = await meta.getAdAccounts()
 
+    // ── BALANCES + HAS_ISSUES (uma chamada de API por conta) ──────────────
+    const balances = await meta.getAccountBalances(rawAccounts.map(a => a.id))
+
     // ── FASE 1: estrutura (contas + campanhas + conjuntos) ──────────────────
     // Roda para TODAS as contas antes de qualquer métrica.
     // Garante que status ACTIVE/PAUSED ficam corretos mesmo se metrics derem timeout.
@@ -67,12 +70,19 @@ export async function runSync(triggeredBy: 'cron' | 'manual' = 'manual') {
       try {
         accountsById.set(rawAccount.id, rawAccount)
 
-        // Upsert conta
-        const account = transformAccount(rawAccount)
+        // Upsert conta com balance + has_issues
+        const bal = balances[rawAccount.id]
+        const account = {
+          ...transformAccount(rawAccount),
+          balance: bal?.balance ?? 0,
+          has_issues: bal?.hasIssues ?? false,
+        }
         await supabase.from('ad_accounts').upsert(account, { onConflict: 'id' })
 
-        // Upsert campanhas — TODOS os status (ACTIVE, PAUSED, ARCHIVED)
+        // Buscar campanhas atuais do Meta
         const rawCampaigns = await meta.getCampaigns(rawAccount.id)
+        const metaCampaignIds = new Set(rawCampaigns.map(c => c.id))
+
         if (rawCampaigns.length > 0) {
           const campaigns = rawCampaigns.map(c => ({
             ...transformCampaign(c, rawAccount.id),
@@ -81,14 +91,61 @@ export async function runSync(triggeredBy: 'cron' | 'manual' = 'manual') {
           await supabase.from('campaigns').upsert(campaigns, { onConflict: 'id' })
         }
 
-        // Upsert conjuntos
+        // DIFF SYNC CAMPANHAS: marcar como ARCHIVED as que sumiram da API Meta
+        // (Meta API esconde campanhas arquivadas/deletadas por padrão)
+        const { data: existingCampaigns } = await supabase
+          .from('campaigns')
+          .select('id')
+          .eq('account_id', rawAccount.id)
+          .not('status', 'in', '("DELETED","ARCHIVED")')
+
+        const missingCampaignIds = (existingCampaigns ?? [])
+          .map(c => c.id)
+          .filter(id => !metaCampaignIds.has(id))
+
+        if (missingCampaignIds.length > 0) {
+          await supabase
+            .from('campaigns')
+            .update({
+              status: 'ARCHIVED',
+              effective_status: 'ARCHIVED',
+              updated_at: new Date().toISOString(),
+            })
+            .in('id', missingCampaignIds)
+        }
+
+        // Conjuntos
         const rawAdSets = await meta.getAdSetsByAccount(rawAccount.id)
+        const metaAdSetIds = new Set(rawAdSets.map(s => s.id))
+
         if (rawAdSets.length > 0) {
           const adSets = rawAdSets.map(s => ({
             ...transformAdSet(s, s.campaign_id),
             updated_at: new Date().toISOString(),
           }))
           await supabase.from('ad_sets').upsert(adSets, { onConflict: 'id' })
+        }
+
+        // DIFF SYNC AD_SETS: arquivar conjuntos missing
+        const { data: existingAdSets } = await supabase
+          .from('ad_sets')
+          .select('id, campaign_id')
+          .in('campaign_id', rawCampaigns.map(c => c.id).concat([...metaCampaignIds]))
+          .not('status', 'in', '("DELETED","ARCHIVED")')
+
+        const missingAdSetIds = (existingAdSets ?? [])
+          .map(s => s.id)
+          .filter(id => !metaAdSetIds.has(id))
+
+        if (missingAdSetIds.length > 0) {
+          await supabase
+            .from('ad_sets')
+            .update({
+              status: 'ARCHIVED',
+              effective_status: 'ARCHIVED',
+              updated_at: new Date().toISOString(),
+            })
+            .in('id', missingAdSetIds)
         }
       } catch (err) {
         console.error(`[Fase 1] Erro na conta ${rawAccount.id}:`, err)

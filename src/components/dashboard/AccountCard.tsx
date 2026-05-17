@@ -11,6 +11,7 @@ interface AccountCardProps {
     activeCampaigns: number
     totalCampaigns: number
     balance?: number
+    hasIssues?: boolean
   }
   selected: boolean
   onClick: () => void
@@ -28,7 +29,8 @@ function fmtCurrency(v: number, currency = 'BRL') {
 export default function AccountCard({ account, selected, onClick }: AccountCardProps) {
   const isActive = account.status === 'ACTIVE'
   const hasSpend = account.spend > 0
-  const hasBalance = account.balance !== undefined && account.balance > 0
+  const hasIssues = account.hasIssues ?? false
+  const balance = account.balance ?? 0
 
   return (
     <button
@@ -36,7 +38,9 @@ export default function AccountCard({ account, selected, onClick }: AccountCardP
       className={`w-full text-left rounded-2xl border p-4 transition-all duration-200 cursor-pointer ${
         selected
           ? 'border-blue-500/50 bg-blue-500/[0.08] ring-1 ring-blue-500/25 shadow-[0_0_20px_rgba(59,130,246,0.12)]'
-          : 'border-white/[0.06] bg-[#111115] hover:border-white/[0.12] hover:bg-[#131319]'
+          : hasIssues
+            ? 'border-amber-500/30 bg-[#111115] hover:border-amber-500/50'
+            : 'border-white/[0.06] bg-[#111115] hover:border-white/[0.12] hover:bg-[#131319]'
       }`}
     >
       {/* Header */}
@@ -44,9 +48,11 @@ export default function AccountCard({ account, selected, onClick }: AccountCardP
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 mb-0.5">
             <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-              isActive
-                ? 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.6)]'
-                : 'bg-zinc-700'
+              hasIssues
+                ? 'bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.6)]'
+                : isActive
+                  ? 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.6)]'
+                  : 'bg-zinc-700'
             }`} />
             <p className="text-xs font-semibold text-zinc-100 truncate leading-snug">{account.name}</p>
           </div>
@@ -63,6 +69,15 @@ export default function AccountCard({ account, selected, onClick }: AccountCardP
         )}
       </div>
 
+      {/* Badge erro pagamento */}
+      {hasIssues && (
+        <div className="mb-2.5">
+          <span className="text-[9px] font-bold tracking-widest text-amber-400 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded uppercase">
+            Erro pagamento
+          </span>
+        </div>
+      )}
+
       {/* Spend */}
       <div className="mb-3">
         <p className={`text-xl font-black tabular-nums leading-none tracking-tight ${hasSpend ? 'text-white' : 'text-zinc-700'}`}>
@@ -74,7 +89,7 @@ export default function AccountCard({ account, selected, onClick }: AccountCardP
       {/* Campanhas */}
       <div className="flex items-center gap-3 text-xs">
         <div className="flex items-center gap-1">
-          <span className="text-emerald-400 font-semibold tabular-nums">{account.activeCampaigns}</span>
+          <span className={`font-semibold tabular-nums ${account.activeCampaigns > 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>{account.activeCampaigns}</span>
           <span className="text-zinc-600">ativas</span>
         </div>
         {account.totalCampaigns > account.activeCampaigns && (
@@ -85,17 +100,17 @@ export default function AccountCard({ account, selected, onClick }: AccountCardP
         )}
       </div>
 
-      {/* Saldo */}
-      {hasBalance && (
-        <div className="mt-3 pt-2.5 border-t border-white/[0.05]">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-zinc-700 uppercase tracking-widest">Saldo</span>
-            <span className="text-xs font-bold text-emerald-400 tabular-nums">
-              {fmtCurrency(account.balance!, account.currency)}
-            </span>
-          </div>
+      {/* Saldo (sempre mostra, inclusive 0) */}
+      <div className="mt-3 pt-2.5 border-t border-white/[0.05]">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] text-zinc-700 uppercase tracking-widest">Saldo</span>
+          <span className={`text-xs font-bold tabular-nums ${
+            hasIssues ? 'text-amber-400' : balance > 0 ? 'text-emerald-400' : 'text-zinc-600'
+          }`}>
+            {fmtCurrency(balance, account.currency)}
+          </span>
         </div>
-      )}
+      </div>
     </button>
   )
 }
