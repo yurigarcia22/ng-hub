@@ -52,22 +52,40 @@ async function metaFetchWithRetry<T>(
   throw new Error('Max retries reached')
 }
 
-// Retorna todas as contas vinculadas ao System User Token
+type AdAccount = {
+  id: string
+  name: string
+  currency: string
+  timezone_name: string
+  account_status: number
+  business?: { id: string; name: string }
+}
+
+// Retorna todas as contas vinculadas ao System User Token (com paginação)
 export async function getAdAccounts() {
-  const data = await metaFetchWithRetry<{
-    data: {
-      id: string
-      name: string
-      currency: string
-      timezone_name: string
-      account_status: number
-      business?: { id: string; name: string }
-    }[]
-  }>(
-    '/me/adaccounts',
-    { fields: 'id,name,currency,timezone_name,account_status,business', limit: '200' }
-  )
-  return data.data
+  const allAccounts: AdAccount[] = []
+  let params: Record<string, string> = {
+    fields: 'id,name,currency,timezone_name,account_status,business',
+    limit: '200'
+  }
+
+  while (true) {
+    const data = await metaFetchWithRetry<{
+      data: AdAccount[]
+      paging?: { cursors?: { after?: string }; next?: string }
+    }>('/me/adaccounts', params)
+
+    allAccounts.push(...data.data)
+
+    // Continua se houver próxima página
+    if (data.paging?.cursors?.after && data.data.length === 200) {
+      params = { ...params, after: data.paging.cursors.after }
+    } else {
+      break
+    }
+  }
+
+  return allAccounts
 }
 
 // Busca saldo em tempo real das contas
@@ -126,10 +144,10 @@ export async function getInsights(
   until: string
 ) {
   try {
-    const data = await metaFetchWithRetry<{ data: { date_start: string; date_stop: string; spend: string; impressions: string; clicks: string; reach: string; ctr: string; cpm: string; cost_per_action_type?: { action_type: string; value: string }[]; purchase_roas?: { action_type: string; value: string }[] }[] }>(
+    const data = await metaFetchWithRetry<{ data: { date_start: string; date_stop: string; spend: string; impressions: string; clicks: string; reach: string; frequency: string; ctr: string; cpm: string; cost_per_action_type?: { action_type: string; value: string }[]; purchase_roas?: { action_type: string; value: string }[]; actions?: { action_type: string; value: string }[] }[] }>(
       `/${entityId}/insights`,
       {
-        fields: 'spend,impressions,clicks,reach,ctr,cpm,cost_per_action_type,purchase_roas',
+        fields: 'spend,impressions,clicks,reach,frequency,ctr,cpm,cost_per_action_type,purchase_roas,actions',
         time_increment: '1',
         time_range: JSON.stringify({ since, until }),
         limit: '90'

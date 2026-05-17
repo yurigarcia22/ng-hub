@@ -191,6 +191,11 @@ export interface Database {
           cpm: number
           cpa: number
           roas: number
+          conversations: number
+          messages_sent: number
+          leads: number
+          page_views: number
+          frequency: number
         }
         Insert: {
           id?: string
@@ -205,6 +210,11 @@ export interface Database {
           cpm?: number
           cpa?: number
           roas?: number
+          conversations?: number
+          messages_sent?: number
+          leads?: number
+          page_views?: number
+          frequency?: number
         }
         Update: {
           id?: string
@@ -219,6 +229,11 @@ export interface Database {
           cpm?: number
           cpa?: number
           roas?: number
+          conversations?: number
+          messages_sent?: number
+          leads?: number
+          page_views?: number
+          frequency?: number
         }
         Relationships: []
       }

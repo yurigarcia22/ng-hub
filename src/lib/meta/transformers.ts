@@ -71,16 +71,54 @@ export function transformInsight(
     impressions: string
     clicks: string
     reach: string
+    frequency?: string
     ctr: string
     cpm: string
     cost_per_action_type?: { action_type: string; value: string }[]
     purchase_roas?: { action_type: string; value: string }[]
+    actions?: { action_type: string; value: string }[]
   },
   entityId: string,
   entityType: 'campaign' | 'ad_set' | 'ad'
 ): Omit<Metric, 'id'> {
-  const cpa = raw.cost_per_action_type?.find(a => a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value ?? '0'
+  const act = raw.actions ?? []
+  const costAct = raw.cost_per_action_type ?? []
+
+  const findAction = (types: string[]) => {
+    for (const t of types) {
+      const v = act.find(a => a.action_type === t)?.value
+      if (v) return parseInt(v) || 0
+    }
+    return 0
+  }
+
+  const cpa = costAct.find(a => a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value ?? '0'
   const roas = raw.purchase_roas?.find(a => a.action_type === 'offsite_conversion.fb_pixel_purchase')?.value ?? '0'
+
+  // WPP: conversas iniciadas (7d window) e mensagens respondidas
+  const conversations = findAction([
+    'onsite_conversion.messaging_conversation_started_7d',
+    'onsite_conversion.total_messaging_connection',
+    'onsite_conversion.messaging_conversation_started_365d',
+  ])
+  const messages_sent = findAction([
+    'onsite_conversion.messaging_first_reply',
+    'onsite_conversion.messaging_conversation_started_1d',
+  ])
+
+  // Leads: pixel lead ou lead form
+  const leads = findAction([
+    'lead',
+    'offsite_conversion.fb_pixel_lead',
+    'onsite_conversion.lead_grouped',
+    'onsite_web_lead',
+  ])
+
+  // Page views: visualizações de landing page
+  const page_views = findAction([
+    'landing_page_view',
+    'link_click',
+  ])
 
   return {
     entity_id: entityId,
@@ -93,6 +131,11 @@ export function transformInsight(
     ctr: parseFloat(raw.ctr) || 0,
     cpm: parseFloat(raw.cpm) || 0,
     cpa: parseFloat(cpa) || 0,
-    roas: parseFloat(roas) || 0
+    roas: parseFloat(roas) || 0,
+    conversations,
+    messages_sent,
+    leads,
+    page_views,
+    frequency: parseFloat(raw.frequency ?? '0') || 0,
   }
 }

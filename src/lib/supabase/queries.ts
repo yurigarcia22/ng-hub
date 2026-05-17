@@ -35,17 +35,17 @@ export async function getCampaignsWithMetrics(
   // Buscar métricas agregadas por campanha
   const { data: metrics } = await supabase
     .from('metrics')
-    .select('entity_id, spend, impressions, clicks, reach, ctr, cpm, cpa, roas')
+    .select('entity_id, spend, impressions, clicks, reach, ctr, cpm, cpa, roas, conversations, messages_sent, leads, page_views, frequency')
     .eq('entity_type', 'campaign')
     .in('entity_id', campaigns.map(c => c.id))
     .gte('date', f.since)
     .lte('date', f.until)
 
   // Agregar métricas por campanha
-  const metricsMap = new Map<string, { spend: number; impressions: number; clicks: number; reach: number; ctr: number; cpm: number; cpa: number; roas: number; count: number }>()
+  const metricsMap = new Map<string, { spend: number; impressions: number; clicks: number; reach: number; ctr: number; cpm: number; cpa: number; roas: number; conversations: number; messages_sent: number; leads: number; page_views: number; frequency: number; count: number }>()
 
   for (const m of metrics ?? []) {
-    const current = metricsMap.get(m.entity_id) ?? { spend: 0, impressions: 0, clicks: 0, reach: 0, ctr: 0, cpm: 0, cpa: 0, roas: 0, count: 0 }
+    const current = metricsMap.get(m.entity_id) ?? { spend: 0, impressions: 0, clicks: 0, reach: 0, ctr: 0, cpm: 0, cpa: 0, roas: 0, conversations: 0, messages_sent: 0, leads: 0, page_views: 0, frequency: 0, count: 0 }
     metricsMap.set(m.entity_id, {
       spend: current.spend + (m.spend ?? 0),
       impressions: current.impressions + (m.impressions ?? 0),
@@ -55,6 +55,11 @@ export async function getCampaignsWithMetrics(
       cpm: current.cpm + (m.cpm ?? 0),
       cpa: current.cpa + (m.cpa ?? 0),
       roas: current.roas + (m.roas ?? 0),
+      conversations: current.conversations + (m.conversations ?? 0),
+      messages_sent: current.messages_sent + (m.messages_sent ?? 0),
+      leads: current.leads + (m.leads ?? 0),
+      page_views: current.page_views + (m.page_views ?? 0),
+      frequency: current.frequency + (m.frequency ?? 0),
       count: current.count + 1
     })
   }
@@ -77,7 +82,17 @@ export async function getCampaignsWithMetrics(
       ctr: m ? m.ctr / count : 0,
       cpm: m ? m.cpm / count : 0,
       cpa: m ? m.cpa / count : 0,
-      roas: m ? m.roas / count : 0
+      roas: m ? m.roas / count : 0,
+      conversations: m?.conversations ?? 0,
+      messages_sent: m?.messages_sent ?? 0,
+      leads: m?.leads ?? 0,
+      page_views: m?.page_views ?? 0,
+      frequency: m ? m.frequency / count : 0,
+      prev_spend: 0,
+      prev_impressions: 0,
+      prev_clicks: 0,
+      prev_conversations: 0,
+      prev_leads: 0,
     }
   })
 }
@@ -99,15 +114,15 @@ export async function getAdSetsWithMetrics(
 
   const { data: metrics } = await supabase
     .from('metrics')
-    .select('entity_id, spend, impressions, clicks, reach, ctr, cpm')
+    .select('entity_id, spend, impressions, clicks, reach, ctr, cpm, frequency')
     .eq('entity_type', 'ad_set')
     .in('entity_id', adSets.map(s => s.id))
     .gte('date', f.since)
     .lte('date', f.until)
 
-  const metricsMap = new Map<string, { spend: number; impressions: number; clicks: number; reach: number; ctr: number; cpm: number; count: number }>()
+  const metricsMap = new Map<string, { spend: number; impressions: number; clicks: number; reach: number; ctr: number; cpm: number; frequency: number; count: number }>()
   for (const m of metrics ?? []) {
-    const cur = metricsMap.get(m.entity_id) ?? { spend: 0, impressions: 0, clicks: 0, reach: 0, ctr: 0, cpm: 0, count: 0 }
+    const cur = metricsMap.get(m.entity_id) ?? { spend: 0, impressions: 0, clicks: 0, reach: 0, ctr: 0, cpm: 0, frequency: 0, count: 0 }
     metricsMap.set(m.entity_id, {
       spend: cur.spend + (m.spend ?? 0),
       impressions: cur.impressions + (m.impressions ?? 0),
@@ -115,6 +130,7 @@ export async function getAdSetsWithMetrics(
       reach: cur.reach + (m.reach ?? 0),
       ctr: cur.ctr + (m.ctr ?? 0),
       cpm: cur.cpm + (m.cpm ?? 0),
+      frequency: cur.frequency + (m.frequency ?? 0),
       count: cur.count + 1
     })
   }
@@ -129,7 +145,8 @@ export async function getAdSetsWithMetrics(
       clicks: m?.clicks ?? 0,
       reach: m?.reach ?? 0,
       ctr: m ? m.ctr / count : 0,
-      cpm: m ? m.cpm / count : 0
+      cpm: m ? m.cpm / count : 0,
+      frequency: m ? m.frequency / count : 0,
     }
   })
 }

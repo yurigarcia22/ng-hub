@@ -7,6 +7,7 @@ import AccountCard from './AccountCard'
 import SyncButton from './SyncButton'
 import LastSyncInfo from './LastSyncInfo'
 import type { CampaignWithMetrics } from '@/types/dashboard'
+import { trendPct } from '@/types/dashboard'
 import type { SyncLog } from '@/types/database'
 
 interface AccountSummary {
@@ -140,19 +141,28 @@ export default function DashboardClient({ lastSync }: Props) {
     const src = selectedAccount
       ? accountsWithBalance.find(a => a.id === selectedAccount)
       : null
+    const prevSpend = filtered.reduce((s, c) => s + (c.prev_spend ?? 0), 0)
+    const prevImpressions = filtered.reduce((s, c) => s + (c.prev_impressions ?? 0), 0)
+    const prevClicks = filtered.reduce((s, c) => s + (c.prev_clicks ?? 0), 0)
     if (src) {
       return {
         spend: src.spend,
+        prevSpend,
         activeCampaigns: src.activeCampaigns,
         impressions: filtered.reduce((s, c) => s + c.impressions, 0),
+        prevImpressions,
         clicks: filtered.reduce((s, c) => s + c.clicks, 0),
+        prevClicks,
       }
     }
     return {
       spend: accountsWithBalance.reduce((s, a) => s + a.spend, 0),
+      prevSpend,
       activeCampaigns: accountsWithBalance.reduce((s, a) => s + a.activeCampaigns, 0),
       impressions: filtered.reduce((s, c) => s + c.impressions, 0),
+      prevImpressions,
       clicks: filtered.reduce((s, c) => s + c.clicks, 0),
+      prevClicks,
     }
   }, [accountsWithBalance, filtered, selectedAccount])
 
@@ -267,10 +277,10 @@ export default function DashboardClient({ lastSync }: Props) {
       {/* Summary stats */}
       {!loadingAccounts && accountsWithBalance.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <SummaryCard label="Gasto no período" value={fmtCurrency(summary.spend)} icon="money" color="blue" muted={summary.spend === 0} />
+          <SummaryCard label="Gasto no período" value={fmtCurrency(summary.spend)} icon="money" color="blue" muted={summary.spend === 0} trend={trendPct(summary.spend, summary.prevSpend)} />
           <SummaryCard label="Campanhas ativas" value={summary.activeCampaigns.toString()} icon="chart" color="emerald" />
-          <SummaryCard label="Impressões" value={fmtCompact(summary.impressions)} icon="eye" color="violet" muted={summary.impressions === 0} />
-          <SummaryCard label="Cliques" value={fmtCompact(summary.clicks)} icon="cursor" color="amber" muted={summary.clicks === 0} />
+          <SummaryCard label="Impressões" value={fmtCompact(summary.impressions)} icon="eye" color="violet" muted={summary.impressions === 0} trend={trendPct(summary.impressions, summary.prevImpressions)} />
+          <SummaryCard label="Cliques" value={fmtCompact(summary.clicks)} icon="cursor" color="amber" muted={summary.clicks === 0} trend={trendPct(summary.clicks, summary.prevClicks)} />
         </div>
       )}
 
@@ -290,8 +300,20 @@ export default function DashboardClient({ lastSync }: Props) {
   )
 }
 
-function SummaryCard({ label, value, muted, icon, color }: {
-  label: string; value: string; muted?: boolean; icon: string; color: 'blue' | 'emerald' | 'violet' | 'amber'
+function SummaryTrend({ pct }: { pct: number | null }) {
+  if (pct === null) return null
+  const abs = Math.abs(pct)
+  if (abs < 0.5) return null
+  const isPositive = pct > 0
+  return (
+    <span className={`text-[10px] font-medium tabular-nums ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+      {isPositive ? '↑' : '↓'}{abs.toFixed(0)}% vs período anterior
+    </span>
+  )
+}
+
+function SummaryCard({ label, value, muted, icon, color, trend }: {
+  label: string; value: string; muted?: boolean; icon: string; color: 'blue' | 'emerald' | 'violet' | 'amber'; trend?: number | null
 }) {
   const iconColors = { blue: 'text-blue-400 bg-blue-500/10', emerald: 'text-emerald-400 bg-emerald-500/10', violet: 'text-violet-400 bg-violet-500/10', amber: 'text-amber-400 bg-amber-500/10' }
   const icons: Record<string, React.ReactNode> = {
@@ -306,6 +328,11 @@ function SummaryCard({ label, value, muted, icon, color }: {
       <div className="min-w-0">
         <p className="text-xs text-zinc-500 leading-none mb-1.5">{label}</p>
         <p className={`text-lg font-bold leading-none tabular-nums ${muted ? 'text-zinc-700' : 'text-white'}`}>{value}</p>
+        {trend !== undefined && trend !== null && (
+          <div className="mt-1">
+            <SummaryTrend pct={trend} />
+          </div>
+        )}
       </div>
     </div>
   )
