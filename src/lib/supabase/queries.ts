@@ -21,7 +21,7 @@ export async function getCampaignsWithMetrics(
 
   let query = supabase
     .from('campaigns')
-    .select('id, name, status, objective, account_id, ad_accounts(name)')
+    .select('id, name, status, effective_status, objective, account_id, ad_accounts(name)')
     .order('account_id')
     .order('name')
 
@@ -72,6 +72,7 @@ export async function getCampaignsWithMetrics(
       id: c.id,
       name: c.name,
       status: c.status,
+      effective_status: (c as unknown as { effective_status: string | null }).effective_status ?? c.status,
       objective: c.objective,
       account_id: c.account_id,
       account_name: accountName,
