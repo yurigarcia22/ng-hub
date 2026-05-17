@@ -88,18 +88,27 @@ export async function getAdAccounts() {
   return allAccounts
 }
 
-// Busca saldo em tempo real das contas
+// Busca fundos disponíveis em tempo real das contas
+// funding_source_details.amount = fundos pré-pago disponíveis (o que aparece no Gerenciador de Anúncios)
 export async function getAccountBalances(accountIds: string[]) {
   const results: Record<string, { balance: number; currency: string }> = {}
   await Promise.allSettled(
     accountIds.map(async id => {
       try {
-        const data = await metaFetchWithRetry<{ balance: string; currency: string }>(
+        const data = await metaFetchWithRetry<{
+          balance: string
+          currency: string
+          funding_source_details?: { amount?: string; display_string?: string }
+        }>(
           `/${id}`,
-          { fields: 'balance,currency' }
+          { fields: 'balance,currency,funding_source_details' }
         )
+        // Preferir funding_source_details.amount (fundos pré-pago disponíveis)
+        // Fallback para balance (saldo da conta)
+        const raw = data.funding_source_details?.amount ?? data.balance ?? '0'
+        const amount = parseFloat(raw) / 100
         results[id] = {
-          balance: parseFloat(data.balance ?? '0') / 100,
+          balance: amount > 0 ? amount : 0,
           currency: data.currency ?? 'BRL',
         }
       } catch {
@@ -110,24 +119,24 @@ export async function getAccountBalances(accountIds: string[]) {
   return results
 }
 
-// Campanhas de uma conta
+// Campanhas de uma conta (inclui effective_status para status real)
 export async function getCampaigns(accountId: string) {
-  const data = await metaFetchWithRetry<{ data: { id: string; name: string; status: string; objective: string }[] }>(
+  const data = await metaFetchWithRetry<{ data: { id: string; name: string; status: string; effective_status: string; objective: string }[] }>(
     `/${accountId}/campaigns`,
-    { fields: 'id,name,status,objective', limit: '500' }
+    { fields: 'id,name,status,effective_status,objective', limit: '500' }
   )
   return data.data
 }
 
 // Todos os conjuntos de anúncios de uma conta (mais rápido que por campanha)
 export async function getAdSetsByAccount(accountId: string) {
-  const all: { id: string; name: string; status: string; daily_budget?: string; campaign_id: string }[] = []
+  const all: { id: string; name: string; status: string; effective_status: string; daily_budget?: string; campaign_id: string }[] = []
   let after: string | undefined
   while (true) {
-    const params: Record<string, string> = { fields: 'id,name,status,daily_budget,campaign_id', limit: '500' }
+    const params: Record<string, string> = { fields: 'id,name,status,effective_status,daily_budget,campaign_id', limit: '500' }
     if (after) params.after = after
     const data = await metaFetchWithRetry<{
-      data: { id: string; name: string; status: string; daily_budget?: string; campaign_id: string }[]
+      data: { id: string; name: string; status: string; effective_status: string; daily_budget?: string; campaign_id: string }[]
       paging?: { cursors?: { after?: string }; next?: string }
     }>(`/${accountId}/adsets`, params)
     all.push(...data.data)

@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   // Buscar todas as campanhas
   const { data: campaigns } = await supabase
     .from('campaigns')
-    .select('id, account_id, status')
+    .select('id, account_id, status, effective_status')
     .in('account_id', accounts.map(a => a.id))
     .not('status', 'in', '("DELETED","ARCHIVED")')
 
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     const cur = accountTotals.get(c.account_id) ?? { spend: 0, activeCampaigns: 0, totalCampaigns: 0 }
     cur.spend += spendByCampaign.get(c.id) ?? 0
     cur.totalCampaigns += 1
-    if (c.status === 'ACTIVE') cur.activeCampaigns += 1
+    if ((c.effective_status ?? c.status) === 'ACTIVE') cur.activeCampaigns += 1
     accountTotals.set(c.account_id, cur)
   }
 

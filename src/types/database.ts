@@ -69,6 +69,7 @@ export interface Database {
           account_id: string
           name: string
           status: string
+          effective_status: string | null
           objective: string | null
           created_at: string
           updated_at: string
@@ -78,6 +79,7 @@ export interface Database {
           account_id: string
           name: string
           status?: string
+          effective_status?: string | null
           objective?: string | null
           created_at?: string
           updated_at?: string
@@ -87,6 +89,7 @@ export interface Database {
           account_id?: string
           name?: string
           status?: string
+          effective_status?: string | null
           objective?: string | null
           created_at?: string
           updated_at?: string
@@ -107,6 +110,7 @@ export interface Database {
           campaign_id: string
           name: string
           status: string
+          effective_status: string | null
           daily_budget: number | null
           created_at: string
           updated_at: string
@@ -116,6 +120,7 @@ export interface Database {
           campaign_id: string
           name: string
           status?: string
+          effective_status?: string | null
           daily_budget?: number | null
           created_at?: string
           updated_at?: string
@@ -125,6 +130,7 @@ export interface Database {
           campaign_id?: string
           name?: string
           status?: string
+          effective_status?: string | null
           daily_budget?: number | null
           created_at?: string
           updated_at?: string

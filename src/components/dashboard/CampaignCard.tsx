@@ -60,13 +60,28 @@ function TemplateBadge({ template }: { template: CampaignTemplate }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const active = status === 'ACTIVE'
-  const paused = status === 'PAUSED'
-  const dot = active
+  const isPaused = status === 'PAUSED' || status === 'CAMPAIGN_PAUSED' || status === 'ADSET_PAUSED'
+  const isIssue = status === 'WITH_ISSUES'
+  const isCompleted = status === 'COMPLETED'
+  const isActive = status === 'ACTIVE'
+
+  const dot = isActive
     ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]'
-    : paused ? 'bg-zinc-600' : 'bg-red-500'
-  const text = active ? 'text-emerald-400' : paused ? 'text-zinc-500' : 'text-red-400'
-  const label = active ? 'Ativo' : paused ? 'Pausado' : status.charAt(0) + status.slice(1).toLowerCase()
+    : isIssue ? 'bg-amber-400'
+    : isPaused || isCompleted ? 'bg-zinc-600'
+    : 'bg-red-500'
+
+  const text = isActive ? 'text-emerald-400'
+    : isIssue ? 'text-amber-400'
+    : isPaused || isCompleted ? 'text-zinc-500'
+    : 'text-red-400'
+
+  const label = isActive ? 'Ativo'
+    : isPaused ? 'Pausado'
+    : isCompleted ? 'Concluída'
+    : isIssue ? 'Erro pagam.'
+    : status.charAt(0) + status.slice(1).toLowerCase().replace(/_/g, ' ')
+
   return (
     <div className="flex items-center gap-1.5">
       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
@@ -97,7 +112,8 @@ interface CampaignCardProps {
 
 export default function CampaignCard({ campaign, filters }: CampaignCardProps) {
   const hasData = campaign.spend > 0 || campaign.impressions > 0
-  const isActive = campaign.status === 'ACTIVE'
+  const effectiveStatus = campaign.effective_status ?? campaign.status
+  const isActive = effectiveStatus === 'ACTIVE'
   const template = detectTemplate(campaign)
   const hasRoas = campaign.roas > 1
   const spendTrend = trendPct(campaign.spend, campaign.prev_spend)
@@ -161,7 +177,7 @@ export default function CampaignCard({ campaign, filters }: CampaignCardProps) {
             {hasRoas && (
               <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/15 px-1.5 py-0.5 rounded-md tabular-nums">{campaign.roas.toFixed(1)}x ROAS</span>
             )}
-            <StatusBadge status={campaign.status} />
+            <StatusBadge status={effectiveStatus} />
           </div>
         </div>
 

@@ -26,7 +26,7 @@ export function transformAccount(raw: {
 }
 
 export function transformCampaign(
-  raw: { id: string; name: string; status: string; objective?: string },
+  raw: { id: string; name: string; status: string; effective_status?: string; objective?: string },
   accountId: string
 ): Omit<Campaign, 'created_at' | 'updated_at'> {
   return {
@@ -34,12 +34,13 @@ export function transformCampaign(
     account_id: accountId,
     name: raw.name,
     status: raw.status,
+    effective_status: raw.effective_status ?? raw.status,
     objective: raw.objective ?? null
   }
 }
 
 export function transformAdSet(
-  raw: { id: string; name: string; status: string; daily_budget?: string },
+  raw: { id: string; name: string; status: string; effective_status?: string; daily_budget?: string },
   campaignId: string
 ): Omit<AdSet, 'created_at' | 'updated_at'> {
   return {
@@ -47,6 +48,7 @@ export function transformAdSet(
     campaign_id: campaignId,
     name: raw.name,
     status: raw.status,
+    effective_status: raw.effective_status ?? raw.status,
     daily_budget: raw.daily_budget ? parseInt(raw.daily_budget) : null
   }
 }

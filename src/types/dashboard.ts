@@ -4,6 +4,7 @@ export interface CampaignWithMetrics {
   id: string
   name: string
   status: string
+  effective_status: string | null
   objective: string | null
   account_id: string
   account_name: string | null
