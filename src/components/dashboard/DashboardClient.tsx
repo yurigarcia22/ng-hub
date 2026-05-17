@@ -123,27 +123,43 @@ export default function DashboardClient({ lastSync }: Props) {
     const prevSpend = filtered.reduce((s, c) => s + (c.prev_spend ?? 0), 0)
     const prevImpressions = filtered.reduce((s, c) => s + (c.prev_impressions ?? 0), 0)
     const prevClicks = filtered.reduce((s, c) => s + (c.prev_clicks ?? 0), 0)
-    if (src) {
-      return {
-        spend: src.spend,
-        prevSpend,
-        activeCampaigns: src.activeCampaigns,
-        impressions: filtered.reduce((s, c) => s + c.impressions, 0),
-        prevImpressions,
-        clicks: filtered.reduce((s, c) => s + c.clicks, 0),
-        prevClicks,
-      }
-    }
+    const prevConversations = filtered.reduce((s, c) => s + (c.prev_conversations ?? 0), 0)
+    const prevLeads = filtered.reduce((s, c) => s + (c.prev_leads ?? 0), 0)
+
+    const spend = src ? src.spend : accountsWithBalance.reduce((s, a) => s + a.spend, 0)
+    const impressions = filtered.reduce((s, c) => s + c.impressions, 0)
+    const clicks = filtered.reduce((s, c) => s + c.clicks, 0)
+    const reach = filtered.reduce((s, c) => s + (c.reach ?? 0), 0)
+    const conversations = filtered.reduce((s, c) => s + (c.conversations ?? 0), 0)
+    const messages_sent = filtered.reduce((s, c) => s + (c.messages_sent ?? 0), 0)
+    const leads = filtered.reduce((s, c) => s + (c.leads ?? 0), 0)
+    const page_views = filtered.reduce((s, c) => s + (c.page_views ?? 0), 0)
+    const activeCampaigns = src ? src.activeCampaigns : accountsWithBalance.reduce((s, a) => s + a.activeCampaigns, 0)
+
+    // Médias ponderadas
+    const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0
+    const cpm = impressions > 0 ? (spend / impressions) * 1000 : 0
+    const cpc = clicks > 0 ? spend / clicks : 0
+    const cpl = leads > 0 ? spend / leads : 0
+    const cpconv = conversations > 0 ? spend / conversations : 0
+    const frequency = reach > 0 ? impressions / reach : 0
+
     return {
-      spend: accountsWithBalance.reduce((s, a) => s + a.spend, 0),
-      prevSpend,
-      activeCampaigns: accountsWithBalance.reduce((s, a) => s + a.activeCampaigns, 0),
-      impressions: filtered.reduce((s, c) => s + c.impressions, 0),
-      prevImpressions,
-      clicks: filtered.reduce((s, c) => s + c.clicks, 0),
-      prevClicks,
+      spend, prevSpend, activeCampaigns, impressions, prevImpressions,
+      clicks, prevClicks, reach, conversations, prevConversations,
+      messages_sent, leads, prevLeads, page_views,
+      ctr, cpm, cpc, cpl, cpconv, frequency,
     }
   }, [accountsWithBalance, filtered, selectedAccount])
+
+  // Detectar template predominante
+  const dashTemplate = useMemo<'wpp' | 'leads' | 'sales' | 'default'>(() => {
+    const totalRoas = filtered.reduce((s, c) => s + (c.roas ?? 0), 0) / Math.max(filtered.length, 1)
+    if (totalRoas > 0.5) return 'sales'
+    if (summary.conversations > summary.leads && summary.conversations > 0) return 'wpp'
+    if (summary.leads > 0) return 'leads'
+    return 'default'
+  }, [filtered, summary])
 
   function handleAccountClick(id: string) {
     setSelectedAccount(prev => prev === id ? null : id)
@@ -257,14 +273,76 @@ export default function DashboardClient({ lastSync }: Props) {
         </div>
       ) : null}
 
-      {/* Summary stats */}
+      {/* Summary stats — Row 1 (volume) */}
       {!loadingAccounts && accountsWithBalance.length > 0 && (
+        <>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <SummaryCard label="Gasto no período" value={fmtCurrency(summary.spend)} icon="money" color="blue" muted={summary.spend === 0} trend={trendPct(summary.spend, summary.prevSpend ?? 0)} />
           <SummaryCard label="Campanhas ativas" value={summary.activeCampaigns.toString()} icon="chart" color="emerald" />
           <SummaryCard label="Impressões" value={fmtCompact(summary.impressions)} icon="eye" color="violet" muted={summary.impressions === 0} trend={trendPct(summary.impressions, summary.prevImpressions ?? 0)} />
           <SummaryCard label="Cliques" value={fmtCompact(summary.clicks)} icon="cursor" color="amber" muted={summary.clicks === 0} trend={trendPct(summary.clicks, summary.prevClicks ?? 0)} />
         </div>
+
+        {/* Row 2 (eficiência + conversão) — template-aware */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <SummaryCard label="CTR médio" value={`${summary.ctr.toFixed(2)}%`} icon="cursor" color="emerald" muted={summary.ctr === 0} />
+          <SummaryCard label="CPM" value={fmtCurrency(summary.cpm)} icon="money" color="violet" muted={summary.cpm === 0} />
+          {dashTemplate === 'wpp' ? (
+            <>
+              <SummaryCard
+                label="Conversas WPP"
+                value={fmtCompact(summary.conversations)}
+                icon="chat"
+                color="emerald"
+                muted={summary.conversations === 0}
+                trend={trendPct(summary.conversations, summary.prevConversations ?? 0)}
+              />
+              <SummaryCard
+                label="Custo/Conversa"
+                value={summary.cpconv > 0 ? fmtCurrency(summary.cpconv) : '—'}
+                icon="money"
+                color="amber"
+                muted={summary.cpconv === 0}
+              />
+            </>
+          ) : dashTemplate === 'leads' ? (
+            <>
+              <SummaryCard
+                label="Leads"
+                value={fmtCompact(summary.leads)}
+                icon="user"
+                color="emerald"
+                muted={summary.leads === 0}
+                trend={trendPct(summary.leads, summary.prevLeads ?? 0)}
+              />
+              <SummaryCard
+                label="CPL"
+                value={summary.cpl > 0 ? fmtCurrency(summary.cpl) : '—'}
+                icon="money"
+                color="amber"
+                muted={summary.cpl === 0}
+              />
+            </>
+          ) : (
+            <>
+              <SummaryCard
+                label="CPC"
+                value={summary.cpc > 0 ? fmtCurrency(summary.cpc) : '—'}
+                icon="cursor"
+                color="emerald"
+                muted={summary.cpc === 0}
+              />
+              <SummaryCard
+                label="Alcance"
+                value={fmtCompact(summary.reach)}
+                icon="user"
+                color="amber"
+                muted={summary.reach === 0}
+              />
+            </>
+          )}
+        </div>
+        </>
       )}
 
       {/* Campaigns */}
