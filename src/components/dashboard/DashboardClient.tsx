@@ -175,15 +175,17 @@ export default function DashboardClient({ lastSync }: Props) {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Campanhas</h1>
-          <LastSyncInfo initial={lastSync} />
+          <h1 className="text-3xl font-black text-white tracking-tight leading-none">Campanhas</h1>
+          <div className="mt-1.5">
+            <LastSyncInfo initial={lastSync} />
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/configuracoes"
-            className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white px-3 py-2 rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 px-3 py-2 rounded-xl border border-white/[0.06] hover:border-white/10 bg-[#111113] transition-colors"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -197,39 +199,39 @@ export default function DashboardClient({ lastSync }: Props) {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2.5">
-        <div className="flex items-center gap-0.5 bg-zinc-900 border border-zinc-800 rounded-lg p-1">
+        <div className="flex items-center gap-0.5 bg-[#111113] border border-white/[0.06] rounded-xl p-1">
           {(['7d', '30d'] as Period[]).map(p => (
             <button key={p} onClick={() => applyPeriod(p)}
-              className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${period === p ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'}`}
+              className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${period === p ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'}`}
             >
               {p === '7d' ? '7 dias' : '30 dias'}
             </button>
           ))}
           <button onClick={() => setPeriod('custom')}
-            className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${period === 'custom' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'}`}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${period === 'custom' ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'}`}
           >
-            Personalizado
+            Custom
           </button>
         </div>
 
         {period === 'custom' && (
           <div className="flex items-center gap-2">
             <input type="date" value={since} max={until} onChange={e => setSince(e.target.value)}
-              className="text-sm bg-zinc-900 border border-zinc-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-            <span className="text-zinc-600 text-xs">até</span>
+              className="text-xs bg-[#111113] border border-white/[0.06] text-white rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <span className="text-zinc-700 text-xs">→</span>
             <input type="date" value={until} min={since} max={fmt(new Date())} onChange={e => setUntil(e.target.value)}
-              className="text-sm bg-zinc-900 border border-zinc-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              className="text-xs bg-[#111113] border border-white/[0.06] text-white rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" />
           </div>
         )}
 
-        <div className="flex items-center gap-0.5 bg-zinc-900 border border-zinc-800 rounded-lg p-1 sm:ml-auto">
+        <div className="flex items-center gap-0.5 bg-[#111113] border border-white/[0.06] rounded-xl p-1 sm:ml-auto">
           <button onClick={() => setStatusFilter('active')}
-            className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${statusFilter === 'active' ? 'bg-emerald-600 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'}`}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${statusFilter === 'active' ? 'bg-emerald-600/90 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'}`}
           >
             Ativas
           </button>
           <button onClick={() => setStatusFilter('all')}
-            className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${statusFilter === 'all' ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'}`}
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${statusFilter === 'all' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'}`}
           >
             Todas
           </button>
@@ -277,10 +279,10 @@ export default function DashboardClient({ lastSync }: Props) {
       {/* Summary stats */}
       {!loadingAccounts && accountsWithBalance.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <SummaryCard label="Gasto no período" value={fmtCurrency(summary.spend)} icon="money" color="blue" muted={summary.spend === 0} trend={trendPct(summary.spend, summary.prevSpend)} />
+          <SummaryCard label="Gasto no período" value={fmtCurrency(summary.spend)} icon="money" color="blue" muted={summary.spend === 0} trend={trendPct(summary.spend, summary.prevSpend ?? 0)} />
           <SummaryCard label="Campanhas ativas" value={summary.activeCampaigns.toString()} icon="chart" color="emerald" />
-          <SummaryCard label="Impressões" value={fmtCompact(summary.impressions)} icon="eye" color="violet" muted={summary.impressions === 0} trend={trendPct(summary.impressions, summary.prevImpressions)} />
-          <SummaryCard label="Cliques" value={fmtCompact(summary.clicks)} icon="cursor" color="amber" muted={summary.clicks === 0} trend={trendPct(summary.clicks, summary.prevClicks)} />
+          <SummaryCard label="Impressões" value={fmtCompact(summary.impressions)} icon="eye" color="violet" muted={summary.impressions === 0} trend={trendPct(summary.impressions, summary.prevImpressions ?? 0)} />
+          <SummaryCard label="Cliques" value={fmtCompact(summary.clicks)} icon="cursor" color="amber" muted={summary.clicks === 0} trend={trendPct(summary.clicks, summary.prevClicks ?? 0)} />
         </div>
       )}
 
@@ -300,40 +302,33 @@ export default function DashboardClient({ lastSync }: Props) {
   )
 }
 
-function SummaryTrend({ pct }: { pct: number | null }) {
-  if (pct === null) return null
-  const abs = Math.abs(pct)
-  if (abs < 0.5) return null
-  const isPositive = pct > 0
-  return (
-    <span className={`text-[10px] font-medium tabular-nums ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
-      {isPositive ? '↑' : '↓'}{abs.toFixed(0)}% vs período anterior
-    </span>
-  )
+const SUMMARY_TOP: Record<string, string> = {
+  blue: 'border-t-blue-500',
+  emerald: 'border-t-emerald-500',
+  violet: 'border-t-violet-500',
+  amber: 'border-t-amber-400',
 }
 
-function SummaryCard({ label, value, muted, icon, color, trend }: {
+function SummaryCard({ label, value, muted, color, trend }: {
   label: string; value: string; muted?: boolean; icon: string; color: 'blue' | 'emerald' | 'violet' | 'amber'; trend?: number | null
 }) {
-  const iconColors = { blue: 'text-blue-400 bg-blue-500/10', emerald: 'text-emerald-400 bg-emerald-500/10', violet: 'text-violet-400 bg-violet-500/10', amber: 'text-amber-400 bg-amber-500/10' }
-  const icons: Record<string, React.ReactNode> = {
-    money: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-    chart: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
-    eye: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
-    cursor: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg>,
-  }
+  const trendEl = (() => {
+    if (trend === undefined || trend === null) return null
+    const abs = Math.abs(trend)
+    if (abs < 0.5) return <p className="text-[10px] text-zinc-700 mt-2">= período anterior</p>
+    const isPos = trend > 0
+    return (
+      <p className={`text-[10px] mt-2 font-medium ${isPos ? 'text-emerald-400' : 'text-red-400'}`}>
+        {isPos ? '↑' : '↓'}{abs.toFixed(0)}% vs anterior
+      </p>
+    )
+  })()
+
   return (
-    <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/60 p-4 flex items-start gap-3">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconColors[color]}`}>{icons[icon]}</div>
-      <div className="min-w-0">
-        <p className="text-xs text-zinc-500 leading-none mb-1.5">{label}</p>
-        <p className={`text-lg font-bold leading-none tabular-nums ${muted ? 'text-zinc-700' : 'text-white'}`}>{value}</p>
-        {trend !== undefined && trend !== null && (
-          <div className="mt-1">
-            <SummaryTrend pct={trend} />
-          </div>
-        )}
-      </div>
+    <div className={`rounded-2xl bg-[#111113] border-t-2 border border-white/[0.06] ${SUMMARY_TOP[color]} p-4`}>
+      <p className="text-[10px] uppercase tracking-widest text-zinc-600 mb-3 font-medium">{label}</p>
+      <p className={`text-2xl font-black tabular-nums tracking-tight leading-none ${muted ? 'text-zinc-700' : 'text-white'}`}>{value}</p>
+      {trendEl}
     </div>
   )
 }
@@ -342,13 +337,14 @@ function LoadingGroups() {
   return (
     <div className="space-y-2 animate-pulse">
       {[1, 2, 3].map(i => (
-        <div key={i} className="rounded-xl border border-zinc-800/60 bg-zinc-900/60 p-5">
+        <div key={i} className="rounded-2xl bg-[#111113] border border-white/[0.06] p-5 pl-6">
           <div className="flex justify-between mb-4">
-            <div className="h-4 bg-zinc-800 rounded w-1/2" />
-            <div className="h-5 bg-zinc-800 rounded w-16" />
+            <div className="h-4 bg-white/[0.05] rounded-lg w-1/2" />
+            <div className="h-4 bg-white/[0.05] rounded-lg w-16" />
           </div>
+          <div className="h-8 bg-white/[0.04] rounded-lg w-40 mb-4" />
           <div className="grid grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(k => <div key={k} className="h-8 bg-zinc-800 rounded" />)}
+            {[1, 2, 3, 4].map(k => <div key={k} className="h-7 bg-white/[0.04] rounded-lg" />)}
           </div>
         </div>
       ))}
@@ -358,16 +354,16 @@ function LoadingGroups() {
 
 function EmptyState({ statusFilter, onShowAll }: { statusFilter: StatusFilter; onShowAll: () => void }) {
   return (
-    <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-14 text-center">
-      <div className="mx-auto w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center mb-4">
-        <svg className="w-6 h-6 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="rounded-2xl border border-white/[0.06] bg-[#111113] p-16 text-center">
+      <div className="mx-auto w-12 h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4">
+        <svg className="w-5 h-5 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       </div>
       <h3 className="text-sm font-semibold text-white mb-1">
         {statusFilter === 'active' ? 'Nenhuma campanha ativa' : 'Nenhuma campanha encontrada'}
       </h3>
-      <p className="text-xs text-zinc-500 mb-3">
+      <p className="text-xs text-zinc-600 mb-3">
         {statusFilter === 'active' ? 'Não há campanhas ativas no período.' : 'Tente ajustar os filtros.'}
       </p>
       {statusFilter === 'active' && (
