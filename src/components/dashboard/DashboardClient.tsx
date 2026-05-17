@@ -242,7 +242,7 @@ export default function DashboardClient({ lastSync }: Props) {
               </button>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 items-stretch">
             {accountsWithBalance.map(account => (
               <AccountCard
                 key={account.id}

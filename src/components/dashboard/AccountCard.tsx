@@ -17,6 +17,8 @@ interface AccountCardProps {
   }
   selected: boolean
   onClick: () => void
+  since?: string
+  until?: string
 }
 
 function fmtCurrency(v: number, currency = 'BRL') {
@@ -28,108 +30,119 @@ function fmtCurrency(v: number, currency = 'BRL') {
   }).format(v)
 }
 
-export default function AccountCard({ account, selected, onClick, since, until }: AccountCardProps & { since?: string; until?: string }) {
+export default function AccountCard({ account, selected, onClick, since, until }: AccountCardProps) {
   const isActive = account.status === 'ACTIVE'
   const hasSpend = account.spend > 0
   const hasIssues = account.hasIssues ?? false
   const balance = account.balance ?? 0
+  // Conta de cartão de crédito: saldo 0, sem issues = cobrança automática no cartão
+  const isCreditCard = balance === 0 && !hasIssues
 
   return (
-    <div className="flex flex-col">
-    <button
-      onClick={onClick}
-      className={`w-full text-left rounded-2xl border p-4 transition-all duration-200 cursor-pointer ${
-        selected
-          ? 'border-blue-500/50 bg-blue-500/[0.08] ring-1 ring-blue-500/25 shadow-[0_0_20px_rgba(59,130,246,0.12)]'
-          : hasIssues
-            ? 'border-amber-500/30 bg-[#111115] hover:border-amber-500/50'
-            : 'border-white/[0.06] bg-[#111115] hover:border-white/[0.12] hover:bg-[#131319]'
-      }`}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-              hasIssues
-                ? 'bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.6)]'
-                : isActive
-                  ? 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.6)]'
-                  : 'bg-zinc-700'
-            }`} />
-            <p className="text-xs font-semibold text-zinc-100 truncate leading-snug">{account.name}</p>
+    <div className="flex flex-col h-full">
+      <button
+        onClick={onClick}
+        className={`flex-1 w-full text-left rounded-2xl border p-4 transition-all duration-200 cursor-pointer ${
+          selected
+            ? 'border-blue-500/50 bg-blue-500/[0.08] ring-1 ring-blue-500/25 shadow-[0_0_20px_rgba(59,130,246,0.12)]'
+            : hasIssues
+              ? 'border-amber-500/30 bg-[#111115] hover:border-amber-500/50'
+              : 'border-white/[0.06] bg-[#111115] hover:border-white/[0.12] hover:bg-[#131319]'
+        }`}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                hasIssues
+                  ? 'bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.6)]'
+                  : isActive
+                    ? 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.6)]'
+                    : 'bg-zinc-700'
+              }`} />
+              <p className="text-xs font-semibold text-zinc-100 truncate leading-snug">{account.name}</p>
+            </div>
+            {account.business_name && (
+              <p className="text-[10px] text-zinc-600 truncate pl-3">{account.business_name}</p>
+            )}
           </div>
-          {account.business_name && (
-            <p className="text-[10px] text-zinc-600 truncate pl-3">{account.business_name}</p>
+          {selected && (
+            <div className="flex-shrink-0 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center shadow-[0_0_8px_rgba(59,130,246,0.5)]">
+              <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
           )}
         </div>
-        {selected && (
-          <div className="flex-shrink-0 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center shadow-[0_0_8px_rgba(59,130,246,0.5)]">
-            <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
+
+        {/* Badge erro pagamento */}
+        {hasIssues && (
+          <div className="mb-2.5">
+            <span className="text-[9px] font-bold tracking-widest text-amber-400 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded uppercase">
+              Erro pagamento
+            </span>
           </div>
         )}
-      </div>
 
-      {/* Badge erro pagamento */}
-      {hasIssues && (
-        <div className="mb-2.5">
-          <span className="text-[9px] font-bold tracking-widest text-amber-400 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded uppercase">
-            Erro pagamento
-          </span>
+        {/* Spend */}
+        <div className="mb-3">
+          <p className={`text-xl font-black tabular-nums leading-none tracking-tight ${hasSpend ? 'text-white' : 'text-zinc-700'}`}>
+            {fmtCurrency(account.spend, account.currency)}
+          </p>
+          <p className="text-[10px] text-zinc-600 mt-0.5 uppercase tracking-widest">gasto</p>
         </div>
-      )}
 
-      {/* Spend */}
-      <div className="mb-3">
-        <p className={`text-xl font-black tabular-nums leading-none tracking-tight ${hasSpend ? 'text-white' : 'text-zinc-700'}`}>
-          {fmtCurrency(account.spend, account.currency)}
-        </p>
-        <p className="text-[10px] text-zinc-600 mt-0.5 uppercase tracking-widest">gasto</p>
-      </div>
-
-      {/* Campanhas */}
-      <div className="flex items-center gap-3 text-xs">
-        <div className="flex items-center gap-1">
-          <span className={`font-semibold tabular-nums ${account.activeCampaigns > 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>{account.activeCampaigns}</span>
-          <span className="text-zinc-600">ativas</span>
-        </div>
-        {account.totalCampaigns > account.activeCampaigns && (
+        {/* Campanhas */}
+        <div className="flex items-center gap-3 text-xs">
           <div className="flex items-center gap-1">
-            <span className="text-zinc-600 tabular-nums">{account.totalCampaigns - account.activeCampaigns}</span>
-            <span className="text-zinc-700">pausadas</span>
+            <span className={`font-semibold tabular-nums ${account.activeCampaigns > 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>{account.activeCampaigns}</span>
+            <span className="text-zinc-600">ativas</span>
           </div>
-        )}
-      </div>
-
-      {/* Saldo (sempre mostra, inclusive 0) */}
-      <div className="mt-3 pt-2.5 border-t border-white/[0.05]">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] text-zinc-700 uppercase tracking-widest">Saldo</span>
-          <span className={`text-xs font-bold tabular-nums ${
-            hasIssues ? 'text-amber-400' : balance > 0 ? 'text-emerald-400' : 'text-zinc-600'
-          }`}>
-            {fmtCurrency(balance, account.currency)}
-          </span>
+          {account.totalCampaigns > account.activeCampaigns && (
+            <div className="flex items-center gap-1">
+              <span className="text-zinc-600 tabular-nums">{account.totalCampaigns - account.activeCampaigns}</span>
+              <span className="text-zinc-700">pausadas</span>
+            </div>
+          )}
         </div>
-      </div>
-    </button>
 
-    {/* Link relatório */}
-    {(since && until) && (
-      <Link
-        href={`/relatorio/${account.id}?since=${since}&until=${until}`}
-        target="_blank"
-        onClick={e => e.stopPropagation()}
-        className="mt-1 w-full flex items-center justify-center gap-1 text-[10px] text-zinc-700 hover:text-zinc-300 py-1.5 rounded-xl hover:bg-white/[0.04] transition-colors"
-      >
-        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        Relatório cliente
-      </Link>
-    )}
+        {/* Saldo / tipo de pagamento */}
+        <div className="mt-3 pt-2.5 border-t border-white/[0.05]">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-zinc-700 uppercase tracking-widest">Saldo</span>
+            {isCreditCard ? (
+              <span className="flex items-center gap-1 text-[10px] text-zinc-600">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                Cartão
+              </span>
+            ) : (
+              <span className={`text-xs font-bold tabular-nums ${
+                hasIssues ? 'text-amber-400' : balance > 0 ? 'text-emerald-400' : 'text-zinc-600'
+              }`}>
+                {fmtCurrency(balance, account.currency)}
+              </span>
+            )}
+          </div>
+        </div>
+      </button>
+
+      {/* Link relatório — sempre visível, alinhado ao fundo */}
+      {(since && until) && (
+        <Link
+          href={`/relatorio/${account.id}?since=${since}&until=${until}`}
+          target="_blank"
+          onClick={e => e.stopPropagation()}
+          className="mt-1 w-full flex items-center justify-center gap-1 text-[10px] text-zinc-700 hover:text-zinc-300 py-1.5 rounded-xl hover:bg-white/[0.04] transition-colors flex-shrink-0"
+        >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Relatório cliente
+        </Link>
+      )}
     </div>
   )
 }
