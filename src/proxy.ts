@@ -4,6 +4,8 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isAuthRoute = pathname.startsWith('/login')
   const isApiRoute = pathname.startsWith('/api')
+  // Rotas públicas (relatórios compartilhados com cliente)
+  const isPublicReport = pathname.startsWith('/r/') || pathname.startsWith('/relatorio/')
 
   // Verifica se existe cookie de sessão Supabase
   const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -17,7 +19,7 @@ export function proxy(request: NextRequest) {
   const hasSession = !!sessionCookie
 
   // Rota protegida sem sessão → redireciona para login
-  if (!hasSession && !isAuthRoute && !isApiRoute) {
+  if (!hasSession && !isAuthRoute && !isApiRoute && !isPublicReport) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

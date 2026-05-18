@@ -13,7 +13,7 @@ interface RouteParams {
 
 export async function GET(_request: Request, { params }: RouteParams) {
   const { token } = await params
-  const payload = verifyShareToken(token)
+  const payload = await verifyShareToken(token)
   if (!payload) {
     return NextResponse.json({ error: 'invalid token' }, { status: 404 })
   }

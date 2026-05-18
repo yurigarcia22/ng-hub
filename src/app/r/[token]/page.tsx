@@ -27,7 +27,7 @@ function pct(cur: number, prev: number): number | null {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { token } = await params
-  const payload = verifyShareToken(token)
+  const payload = await verifyShareToken(token)
   if (!payload) return { title: 'Relatório indisponível' }
   const data = await fetchReportData(payload.accountId, payload.since, payload.until)
   return { title: data ? `Relatório · ${data.account.name}` : 'Relatório' }
@@ -49,7 +49,7 @@ function Trend({ cur, prev, invert = false }: { cur: number; prev: number; inver
 
 export default async function SharedReportPage({ params }: PageProps) {
   const { token } = await params
-  const payload = verifyShareToken(token)
+  const payload = await verifyShareToken(token)
   if (!payload) {
     return (
       <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">

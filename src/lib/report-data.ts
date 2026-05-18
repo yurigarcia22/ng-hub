@@ -171,8 +171,8 @@ export async function fetchReportData(accountId: string, since: string, until: s
     }
   })
 
-  // Filter: só ACTIVE ou com gasto > 0
-  const visible = campaignRows.filter(c => c.effective_status === 'ACTIVE' || c.m.spend > 0)
+  // Filter: SÓ campanhas que tiveram gasto no período (cliente não precisa ver inativas)
+  const visible = campaignRows.filter(c => c.m.spend > 0)
   visible.sort((a, b) => {
     const aA = a.effective_status === 'ACTIVE' ? 1 : 0
     const bA = b.effective_status === 'ACTIVE' ? 1 : 0
