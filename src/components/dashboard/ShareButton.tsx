@@ -41,7 +41,6 @@ export default function ShareButton({ accountId, since, until }: Props) {
     e.stopPropagation()
     e.preventDefault()
     if (!shareUrl) {
-      // Gerar token primeiro
       fetch('/api/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -57,45 +56,51 @@ export default function ShareButton({ accountId, since, until }: Props) {
   }
 
   return (
-    <div className="mt-1 flex gap-1 flex-shrink-0">
+    <div className="mt-1.5 flex gap-1 flex-shrink-0">
       <button
         onClick={generateAndCopy}
         disabled={state === 'loading'}
-        className={`flex-1 flex items-center justify-center gap-1 text-[10px] py-1.5 rounded-xl transition-colors ${
+        className={`press flex-1 inline-flex items-center justify-center gap-1.5 text-[10px] font-semibold py-2 rounded-xl transition-all duration-200 ${
           state === 'copied'
-            ? 'text-emerald-400 bg-emerald-500/10'
+            ? 'text-emerald-300 bg-emerald-500/[0.12] border border-emerald-500/25 shadow-[0_0_16px_rgba(16,185,129,0.15)]'
             : state === 'error'
-              ? 'text-red-400 bg-red-500/10'
-              : 'text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.04]'
+              ? 'text-red-300 bg-red-500/[0.12] border border-red-500/25'
+              : 'text-zinc-500 hover:text-zinc-200 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.04] hover:border-white/[0.08]'
         }`}
       >
         {state === 'copied' ? (
           <>
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            <svg className="w-3 h-3 animate-scale-in" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
             </svg>
-            Link copiado!
+            Link copiado
           </>
         ) : state === 'error' ? (
-          'Erro ao copiar'
+          'Erro'
         ) : state === 'loading' ? (
-          'Gerando...'
+          <>
+            <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Gerando
+          </>
         ) : (
           <>
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a3 3 0 10-5.367 2.684 3 3 0 005.367-2.684zm0-9.316a3 3 0 10-5.368-2.684 3 3 0 005.368 2.684z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m9.032 4.026a3 3 0 10-5.367 2.684 3 3 0 005.367-2.684zm0-9.316a3 3 0 10-5.368-2.684 3 3 0 005.368 2.684z" />
             </svg>
-            Copiar link
+            Compartilhar
           </>
         )}
       </button>
       <button
         onClick={openPdf}
         title="Baixar PDF"
-        className="flex items-center justify-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-300 px-2 py-1.5 rounded-xl hover:bg-white/[0.04] transition-colors"
+        className="press inline-flex items-center justify-center gap-1 text-[10px] font-semibold text-zinc-500 hover:text-zinc-200 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.04] hover:border-white/[0.08] px-2.5 py-2 rounded-xl transition-all duration-200"
       >
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         PDF
       </button>

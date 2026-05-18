@@ -93,10 +93,11 @@ export default function AdSetCard({ adSet, campaignId, filters }: AdSetCardProps
   return (
     <Link
       href={`/campaigns/${campaignId}/ad-sets/${adSet.id}${filters ? `?${filters}` : ''}`}
-      className="group relative block rounded-2xl bg-[#111115] border border-white/[0.06] hover:border-white/[0.12] hover:shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-200 overflow-hidden"
+      className="group relative block rounded-2xl bg-[#111115] border border-white/[0.05] hover:border-white/[0.12] hover:-translate-y-0.5 hover:shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.03)] transition-all duration-300 overflow-hidden"
     >
       {/* Acento lateral */}
-      <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentBar}`} />
+      <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentBar} transition-all duration-300 group-hover:w-[4px]`} />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       <div className="pl-5 pr-5 pt-4 pb-4">
         {/* Header */}
@@ -174,10 +175,10 @@ export default function AdSetCard({ adSet, campaignId, filters }: AdSetCardProps
       </div>
 
       <div className="border-t border-white/[0.04] px-5 py-2.5 flex items-center justify-end bg-[#0D0E12]">
-        <span className="text-xs text-zinc-600 group-hover:text-zinc-400 transition-colors flex items-center gap-1">
+        <span className="text-xs text-zinc-600 group-hover:text-zinc-300 transition-colors flex items-center gap-1 font-medium">
           Ver anúncios
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          <svg className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
           </svg>
         </span>
       </div>

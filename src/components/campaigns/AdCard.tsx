@@ -26,17 +26,17 @@ export default function AdCard({ ad }: AdCardProps) {
   ]
 
   return (
-    <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/60 p-5">
+    <div className="group rounded-2xl border border-white/[0.05] bg-[#111115] hover:border-white/[0.10] hover:bg-[#13131a] p-5 transition-all duration-200">
       <div className="flex items-start gap-4">
         {/* Thumbnail */}
-        <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-zinc-800 overflow-hidden border border-zinc-700/60">
+        <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-[#0d0d10] overflow-hidden border border-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
           {ad.creative_url ? (
             <Image
               src={ad.creative_url}
               alt={ad.name}
-              width={56}
-              height={56}
-              className="w-full h-full object-cover"
+              width={64}
+              height={64}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               unoptimized
             />
           ) : (
@@ -51,8 +51,8 @@ export default function AdCard({ ad }: AdCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex items-start gap-2 min-w-0">
-              <div className={`mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? 'bg-emerald-500' : 'bg-zinc-700'}`} />
-              <h3 className="text-sm font-medium text-zinc-100 truncate">{ad.name}</h3>
+              <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-zinc-700'}`} />
+              <h3 className="text-sm font-semibold text-zinc-100 truncate leading-snug">{ad.name}</h3>
             </div>
             <MetricsBadge status={ad.status} />
           </div>
@@ -60,8 +60,8 @@ export default function AdCard({ ad }: AdCardProps) {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {metrics.map(m => (
               <div key={m.label} className="space-y-1">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-600 font-medium">{m.label}</p>
-                <p className={`text-sm font-semibold tabular-nums ${
+                <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">{m.label}</p>
+                <p className={`text-sm font-bold tabular-nums ${
                   !hasData ? 'text-zinc-700' :
                   m.highlight ? 'text-emerald-400' :
                   'text-zinc-100'

@@ -168,19 +168,20 @@ export default function DashboardClient({ lastSync }: Props) {
   const filtersStr = `since=${since}&until=${until}`
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-white tracking-tight leading-none">Campanhas</h1>
-          <div className="mt-1.5">
-            <LastSyncInfo initial={lastSync} />
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Dashboard</p>
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-none">
+            Campanhas
+          </h1>
+          <LastSyncInfo initial={lastSync} />
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/configuracoes"
-            className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 px-3 py-2 rounded-xl border border-white/[0.06] hover:border-white/[0.1] bg-[#111115] transition-colors"
+            className="press inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-100 px-3.5 py-2 rounded-xl border border-white/[0.06] hover:border-white/[0.12] bg-[#111115] hover:bg-[#13131a] transition-all duration-200"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -194,39 +195,55 @@ export default function DashboardClient({ lastSync }: Props) {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2.5">
-        <div className="flex items-center gap-0.5 bg-[#111115] border border-white/[0.06] rounded-xl p-1">
+        <div className="flex items-center gap-0.5 bg-[#0d0d10] border border-white/[0.05] rounded-xl p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
           {(['7d', '30d'] as Period[]).map(p => (
             <button key={p} onClick={() => applyPeriod(p)}
-              className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${period === p ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'}`}
+              className={`press text-xs px-3 py-1.5 rounded-lg font-semibold transition-all duration-200 ${
+                period === p
+                  ? 'bg-white/[0.08] text-white shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.05)]'
+                  : 'text-zinc-500 hover:text-zinc-200'
+              }`}
             >
               {p === '7d' ? '7 dias' : '30 dias'}
             </button>
           ))}
           <button onClick={() => setPeriod('custom')}
-            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${period === 'custom' ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'}`}
+            className={`press text-xs px-3 py-1.5 rounded-lg font-semibold transition-all duration-200 ${
+              period === 'custom'
+                ? 'bg-white/[0.08] text-white shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.05)]'
+                : 'text-zinc-500 hover:text-zinc-200'
+            }`}
           >
             Custom
           </button>
         </div>
 
         {period === 'custom' && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 animate-fade-in">
             <input type="date" value={since} max={until} onChange={e => setSince(e.target.value)}
-              className="text-xs bg-[#111115] border border-white/[0.06] text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-            <span className="text-zinc-700 text-xs">→</span>
+              className="text-xs bg-[#0d0d10] border border-white/[0.05] text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/15 transition-all" />
+            <span className="text-zinc-600 text-xs">→</span>
             <input type="date" value={until} min={since} max={fmt(new Date())} onChange={e => setUntil(e.target.value)}
-              className="text-xs bg-[#111115] border border-white/[0.06] text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              className="text-xs bg-[#0d0d10] border border-white/[0.05] text-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/15 transition-all" />
           </div>
         )}
 
-        <div className="flex items-center gap-0.5 bg-[#111115] border border-white/[0.06] rounded-xl p-1 sm:ml-auto">
+        <div className="flex items-center gap-0.5 bg-[#0d0d10] border border-white/[0.05] rounded-xl p-1 sm:ml-auto shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
           <button onClick={() => setStatusFilter('active')}
-            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${statusFilter === 'active' ? 'bg-emerald-600/80 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'}`}
+            className={`press text-xs px-3 py-1.5 rounded-lg font-semibold transition-all duration-200 ${
+              statusFilter === 'active'
+                ? 'bg-emerald-500/15 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)] border border-emerald-500/20'
+                : 'text-zinc-500 hover:text-zinc-200'
+            }`}
           >
             Ativas
           </button>
           <button onClick={() => setStatusFilter('all')}
-            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${statusFilter === 'all' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'}`}
+            className={`press text-xs px-3 py-1.5 rounded-lg font-semibold transition-all duration-200 ${
+              statusFilter === 'all'
+                ? 'bg-white/[0.08] text-white shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
+                : 'text-zinc-500 hover:text-zinc-200'
+            }`}
           >
             Todas
           </button>
@@ -368,42 +385,60 @@ const SUMMARY_TOP: Record<string, string> = {
   amber: 'border-t-amber-400',
 }
 
+const SUMMARY_GLOW: Record<string, string> = {
+  blue: 'hover:shadow-[0_8px_32px_rgba(59,130,246,0.10)]',
+  emerald: 'hover:shadow-[0_8px_32px_rgba(16,185,129,0.10)]',
+  violet: 'hover:shadow-[0_8px_32px_rgba(139,92,246,0.10)]',
+  amber: 'hover:shadow-[0_8px_32px_rgba(245,158,11,0.10)]',
+}
+
 function SummaryCard({ label, value, muted, color, trend }: {
   label: string; value: string; muted?: boolean; icon: string; color: 'blue' | 'emerald' | 'violet' | 'amber'; trend?: number | null
 }) {
   const trendEl = (() => {
     if (trend === undefined || trend === null) return null
     const abs = Math.abs(trend)
-    if (abs < 0.5) return <p className="text-[10px] text-zinc-700 mt-2">= período anterior</p>
+    if (abs < 0.5) return <p className="text-[10px] text-zinc-700 mt-2 font-medium">= período anterior</p>
     const isPos = trend > 0
     return (
-      <p className={`text-[10px] mt-2 font-semibold ${isPos ? 'text-emerald-400' : 'text-red-400'}`}>
-        {isPos ? '↑' : '↓'}{abs.toFixed(0)}% vs anterior
+      <p className={`text-[10px] mt-2 font-bold flex items-center gap-0.5 ${isPos ? 'text-emerald-400' : 'text-red-400'}`}>
+        <span>{isPos ? '▲' : '▼'}</span>
+        {abs.toFixed(0)}% vs anterior
       </p>
     )
   })()
 
   return (
-    <div className={`rounded-2xl bg-[#111115] border-t-2 border border-white/[0.06] ${SUMMARY_TOP[color]} p-4`}>
-      <p className="text-[10px] uppercase tracking-widest text-zinc-600 mb-3 font-medium">{label}</p>
+    <div className={`interactive rounded-2xl bg-[#111115] border-t-2 border border-white/[0.05] ${SUMMARY_TOP[color]} ${SUMMARY_GLOW[color]} p-4 relative overflow-hidden`}>
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.04] to-transparent" />
+      <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2.5 font-bold">{label}</p>
       <p className={`text-2xl font-black tabular-nums tracking-tight leading-none ${muted ? 'text-zinc-700' : 'text-white'}`}>{value}</p>
-      {trendEl}
+      <div className="min-h-[14px]">{trendEl}</div>
     </div>
   )
 }
 
 function LoadingGroups() {
   return (
-    <div className="space-y-2 animate-pulse">
+    <div className="space-y-2">
       {[1, 2, 3].map(i => (
-        <div key={i} className="rounded-2xl bg-[#111115] border border-white/[0.06] p-5 pl-6">
+        <div
+          key={i}
+          className="rounded-2xl bg-[#111115] border border-white/[0.05] p-5 pl-6 animate-fade-in-up"
+          style={{ animationDelay: `${i * 70}ms` }}
+        >
           <div className="flex justify-between mb-4">
-            <div className="h-4 bg-white/[0.05] rounded-lg w-1/2" />
-            <div className="h-4 bg-white/[0.05] rounded-lg w-16" />
+            <div className="skeleton h-4 w-1/2" />
+            <div className="skeleton h-5 w-16" />
           </div>
-          <div className="h-8 bg-white/[0.04] rounded-lg w-40 mb-4" />
+          <div className="skeleton h-9 w-40 mb-4" />
           <div className="grid grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(k => <div key={k} className="h-7 bg-white/[0.04] rounded-lg" />)}
+            {[1, 2, 3, 4].map(k => (
+              <div key={k} className="space-y-2">
+                <div className="skeleton h-2 w-14" />
+                <div className="skeleton h-4 w-20" />
+              </div>
+            ))}
           </div>
         </div>
       ))}
@@ -413,21 +448,28 @@ function LoadingGroups() {
 
 function EmptyState({ statusFilter, onShowAll }: { statusFilter: StatusFilter; onShowAll: () => void }) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#111115] p-16 text-center">
-      <div className="mx-auto w-12 h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4">
-        <svg className="w-5 h-5 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="rounded-2xl border border-white/[0.05] bg-[#111115] p-16 text-center animate-fade-in-up relative overflow-hidden">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.04] to-transparent" />
+      <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-white/[0.04] to-transparent flex items-center justify-center mb-5 border border-white/[0.03]">
+        <svg className="w-6 h-6 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       </div>
-      <h3 className="text-sm font-semibold text-white mb-1">
+      <h3 className="text-sm font-bold text-white mb-1.5 tracking-tight">
         {statusFilter === 'active' ? 'Nenhuma campanha ativa' : 'Nenhuma campanha encontrada'}
       </h3>
-      <p className="text-xs text-zinc-600 mb-3">
-        {statusFilter === 'active' ? 'Não há campanhas ativas no período.' : 'Tente ajustar os filtros.'}
+      <p className="text-xs text-zinc-500 mb-4 max-w-xs mx-auto">
+        {statusFilter === 'active' ? 'Não há campanhas ativas no período selecionado.' : 'Tente ajustar os filtros ou sincronizar a conta.'}
       </p>
       {statusFilter === 'active' && (
-        <button onClick={onShowAll} className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium">
+        <button
+          onClick={onShowAll}
+          className="press inline-flex items-center gap-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300 bg-blue-500/[0.08] hover:bg-blue-500/[0.12] border border-blue-500/20 px-4 py-2 rounded-xl transition-all duration-200"
+        >
           Ver todas as campanhas
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
         </button>
       )}
     </div>

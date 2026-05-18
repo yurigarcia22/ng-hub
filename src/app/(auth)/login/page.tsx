@@ -13,40 +13,47 @@ export default async function LoginPage({
   const hasError = params?.error === '1'
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#09090b] px-4">
-      {/* Background subtle gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/20 via-transparent to-transparent pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Background gradient orbs */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-blue-600/[0.07] blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-violet-600/[0.05] blur-[100px] pointer-events-none" />
 
-      <div className="relative w-full max-w-sm">
+      <div className="relative w-full max-w-sm animate-fade-in-up">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600 mb-4 shadow-lg shadow-blue-500/20">
-            <span className="text-white font-bold text-lg tracking-tight">NG</span>
+        <div className="text-center mb-10 animate-fade-in-down">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 mb-5 shadow-[0_8px_32px_rgba(59,130,246,0.35)] relative">
+            <span className="text-white font-black text-base tracking-tight">NG</span>
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">NG Hub</h1>
-          <p className="text-sm text-zinc-500 mt-1">Painel de Campanhas Meta Ads</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">NG Hub</h1>
+          <p className="text-sm text-zinc-500 mt-1.5">Painel de Campanhas Meta Ads</p>
         </div>
 
         {/* Card */}
-        <div className="bg-zinc-900/80 border border-zinc-800/80 rounded-2xl p-8 shadow-2xl backdrop-blur-sm">
+        <div className="bg-[#0d0d10]/80 border border-white/[0.06] rounded-2xl p-7 shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-xl relative">
+          {/* Subtle top highlight */}
+          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
           <form action={login} className="space-y-5">
-            <div className="space-y-1.5">
-              <label htmlFor="email" className="text-xs font-medium text-zinc-400 uppercase tracking-widest">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                 E-mail
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                placeholder="seu@email.com"
-                className="w-full px-4 py-3 bg-zinc-800/80 border border-zinc-700/60 rounded-xl text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
+              <div className="relative group">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder="seu@email.com"
+                  className="w-full px-4 py-3 bg-[#111115] border border-white/[0.06] rounded-xl text-white placeholder-zinc-700 text-sm focus:outline-none focus:border-blue-500/50 focus:bg-[#13131a] focus:ring-2 focus:ring-blue-500/15 transition-all duration-200"
+                />
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="password" className="text-xs font-medium text-zinc-400 uppercase tracking-widest">
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                 Senha
               </label>
               <input
@@ -56,16 +63,16 @@ export default async function LoginPage({
                 required
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="w-full px-4 py-3 bg-zinc-800/80 border border-zinc-700/60 rounded-xl text-white placeholder-zinc-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-[#111115] border border-white/[0.06] rounded-xl text-white placeholder-zinc-700 text-sm focus:outline-none focus:border-blue-500/50 focus:bg-[#13131a] focus:ring-2 focus:ring-blue-500/15 transition-all duration-200"
               />
             </div>
 
             {hasError && (
-              <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2">
+              <div className="px-4 py-3 bg-red-500/[0.08] border border-red-500/20 rounded-xl flex items-center gap-2.5 animate-fade-in">
                 <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p className="text-sm text-red-400">E-mail ou senha incorretos.</p>
+                <p className="text-sm text-red-400 font-medium">E-mail ou senha incorretos.</p>
               </div>
             )}
 
@@ -73,7 +80,7 @@ export default async function LoginPage({
           </form>
         </div>
 
-        <p className="text-center text-xs text-zinc-700 mt-6">Grupo NG — uso interno</p>
+        <p className="text-center text-[11px] text-zinc-600 mt-8 tracking-wide">Grupo NG · uso interno</p>
       </div>
     </div>
   )
