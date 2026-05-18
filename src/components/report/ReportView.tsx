@@ -61,6 +61,43 @@ function KpiCard({ label, value, hint, trend, accent, stagger }: {
   )
 }
 
+// KPI grande — para os 3 principais de cada template
+function HeroKpi({ label, value, trend, accent, stagger }: {
+  label: string; value: string; trend?: React.ReactNode;
+  accent: 'blue' | 'emerald' | 'violet' | 'amber'; stagger?: number
+}) {
+  const cfg = {
+    blue:    { glow: 'shadow-[0_8px_28px_rgba(59,130,246,0.10)]',  bar: 'from-blue-500 to-blue-700',         text: 'text-blue-600' },
+    emerald: { glow: 'shadow-[0_8px_28px_rgba(16,185,129,0.10)]',  bar: 'from-emerald-500 to-emerald-700',   text: 'text-emerald-600' },
+    violet:  { glow: 'shadow-[0_8px_28px_rgba(139,92,246,0.10)]',  bar: 'from-violet-500 to-violet-700',     text: 'text-violet-600' },
+    amber:   { glow: 'shadow-[0_8px_28px_rgba(245,158,11,0.10)]',  bar: 'from-amber-500 to-amber-600',       text: 'text-amber-600' },
+  }[accent]
+  return (
+    <div
+      className={`relative bg-white border border-zinc-200/80 rounded-3xl p-5 sm:p-6 ${cfg.glow} hover:shadow-[0_12px_36px_rgba(0,0,0,0.10)] transition-shadow duration-300 animate-fade-in-up overflow-hidden`}
+      style={stagger ? { animationDelay: `${stagger * 80}ms` } : undefined}
+    >
+      <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${cfg.bar}`} />
+      <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-3 font-bold">{label}</p>
+      <p className="text-3xl sm:text-4xl font-black text-zinc-900 tabular-nums leading-none tracking-tight">{value}</p>
+      <div className="mt-3 min-h-[18px]">
+        {trend}
+      </div>
+    </div>
+  )
+}
+
+// Mini KPI — métricas secundárias em linha
+function MiniKpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="bg-white border border-zinc-200/80 rounded-2xl px-3 py-2.5 hover:bg-zinc-50/50 transition-colors duration-200">
+      <p className="text-[9px] uppercase tracking-widest text-zinc-400 font-bold leading-none mb-1.5">{label}</p>
+      <p className="text-sm font-bold text-zinc-900 tabular-nums leading-none">{value}</p>
+      {sub && <p className="text-[10px] text-zinc-400 mt-1 truncate">{sub}</p>}
+    </div>
+  )
+}
+
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold mt-5 first:mt-0 mb-1.5">
@@ -181,9 +218,9 @@ export function ReportView({ data, pdfUrl, backUrl }: Props) {
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-3.5">
-          <KpiCard
+        {/* KPIs PRINCIPAIS — 3 cards grandes em destaque */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <HeroKpi
             label="Gasto total"
             value={fmtCurrency(allCur.spend, currency)}
             trend={<Trend cur={allCur.spend} prev={allPrev.spend} invert />}
@@ -193,86 +230,112 @@ export function ReportView({ data, pdfUrl, backUrl }: Props) {
 
           {template === 'wpp' ? (
             <>
-              <KpiCard
-                label="Conversas"
+              <HeroKpi
+                label="Conversas iniciadas"
                 value={fmtNumber(allCur.conversations)}
                 trend={<Trend cur={allCur.conversations} prev={allPrev.conversations} />}
-                hint={allDerived.cpconv > 0 ? `${fmtCurrency(allDerived.cpconv)}/conv` : undefined}
                 accent="emerald"
                 stagger={2}
               />
-              <KpiCard
-                label="Mensagens"
-                value={fmtNumber(allCur.messages_sent)}
-                hint="respondidas"
-                accent="emerald"
+              <HeroKpi
+                label="Custo por conversa"
+                value={allDerived.cpconv > 0 ? fmtCurrency(allDerived.cpconv) : '—'}
+                trend={allDerived.cpconv > 0 ? <Trend cur={allDerived.cpconv} prev={prevDerived.cpconv} invert /> : undefined}
+                accent="amber"
                 stagger={3}
               />
             </>
           ) : template === 'leads' ? (
             <>
-              <KpiCard
-                label="Leads"
+              <HeroKpi
+                label="Leads gerados"
                 value={fmtNumber(allCur.leads)}
                 trend={<Trend cur={allCur.leads} prev={allPrev.leads} />}
-                hint={allDerived.cpl > 0 ? `${fmtCurrency(allDerived.cpl)}/lead` : undefined}
                 accent="violet"
                 stagger={2}
               />
-              <KpiCard
-                label="Taxa conv."
-                value={fmtPercent(allDerived.leadConvRate)}
-                hint="cliques → leads"
-                accent="emerald"
+              <HeroKpi
+                label="Custo por lead"
+                value={allDerived.cpl > 0 ? fmtCurrency(allDerived.cpl) : '—'}
+                trend={allDerived.cpl > 0 ? <Trend cur={allDerived.cpl} prev={prevDerived.cpl} invert /> : undefined}
+                accent="amber"
                 stagger={3}
               />
             </>
           ) : template === 'sales' ? (
             <>
-              <KpiCard
+              <HeroKpi
                 label="ROAS"
                 value={`${allCur.roas.toFixed(2)}x`}
                 trend={<Trend cur={allCur.roas} prev={allPrev.roas} />}
                 accent="amber"
                 stagger={2}
               />
-              <KpiCard
-                label="Cliques"
-                value={fmtNumber(allCur.clicks)}
-                trend={<Trend cur={allCur.clicks} prev={allPrev.clicks} />}
-                hint={allDerived.cpc > 0 ? `${fmtCurrency(allDerived.cpc)}/clk` : undefined}
+              <HeroKpi
+                label="CPA"
+                value={allCur.cpa > 0 ? fmtCurrency(allCur.cpa) : '—'}
+                trend={<Trend cur={allCur.cpa} prev={allPrev.cpa} invert />}
                 accent="emerald"
                 stagger={3}
               />
             </>
           ) : (
             <>
-              <KpiCard
+              <HeroKpi
                 label="Impressões"
                 value={fmtCompact(allCur.impressions)}
                 trend={<Trend cur={allCur.impressions} prev={allPrev.impressions} />}
-                hint={`${fmtCompact(allCur.reach)} alcance`}
                 accent="violet"
                 stagger={2}
               />
-              <KpiCard
+              <HeroKpi
                 label="Cliques"
                 value={fmtNumber(allCur.clicks)}
                 trend={<Trend cur={allCur.clicks} prev={allPrev.clicks} />}
-                hint={allDerived.cpc > 0 ? `${fmtCurrency(allDerived.cpc)}/clk` : undefined}
                 accent="emerald"
                 stagger={3}
               />
             </>
           )}
+        </div>
 
-          <KpiCard
+        {/* MÉTRICAS SECUNDÁRIAS — linha discreta abaixo dos KPIs principais */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+          {template === 'wpp' && (
+            <MiniKpi
+              label="Taxa de atendimento"
+              value={allCur.conversations > 0 ? `${Math.round((allCur.messages_sent / allCur.conversations) * 100)}%` : '—'}
+              sub={`${fmtNumber(allCur.messages_sent)} de ${fmtNumber(allCur.conversations)}`}
+            />
+          )}
+          {template === 'leads' && (
+            <MiniKpi
+              label="Pág. views"
+              value={fmtNumber(allCur.page_views)}
+              sub={`${fmtNumber(allCur.clicks)} cliques`}
+            />
+          )}
+          {(template === 'sales' || template === 'default') && (
+            <MiniKpi
+              label={template === 'sales' ? 'Cliques' : 'Alcance'}
+              value={template === 'sales' ? fmtNumber(allCur.clicks) : fmtCompact(allCur.reach)}
+              sub={template === 'sales' && allDerived.cpc > 0 ? `${fmtCurrency(allDerived.cpc)}/clique` : undefined}
+            />
+          )}
+          <MiniKpi
             label="CTR médio"
             value={fmtPercent(allCur.ctr)}
-            trend={<Trend cur={allCur.ctr} prev={allPrev.ctr} />}
-            hint={`CPM ${fmtCurrency(allCur.cpm)}`}
-            accent="amber"
-            stagger={4}
+            sub={`vs ${fmtPercent(allPrev.ctr)} ant.`}
+          />
+          <MiniKpi
+            label="CPM"
+            value={fmtCurrency(allCur.cpm)}
+            sub="custo / 1k impr."
+          />
+          <MiniKpi
+            label="Frequência"
+            value={allCur.frequency > 0 ? allCur.frequency.toFixed(2) : '—'}
+            sub="visões / pessoa"
           />
         </div>
 
