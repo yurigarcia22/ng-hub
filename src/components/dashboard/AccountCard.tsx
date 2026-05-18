@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import ShareButton from './ShareButton'
 
 interface AccountCardProps {
   account: {
@@ -129,19 +129,9 @@ export default function AccountCard({ account, selected, onClick, since, until }
         </div>
       </button>
 
-      {/* Link relatório — sempre visível, alinhado ao fundo */}
+      {/* Compartilhar relatório */}
       {(since && until) && (
-        <Link
-          href={`/relatorio/${account.id}?since=${since}&until=${until}`}
-          target="_blank"
-          onClick={e => e.stopPropagation()}
-          className="mt-1 w-full flex items-center justify-center gap-1 text-[10px] text-zinc-700 hover:text-zinc-300 py-1.5 rounded-xl hover:bg-white/[0.04] transition-colors flex-shrink-0"
-        >
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Relatório cliente
-        </Link>
+        <ShareButton accountId={account.id} since={since} until={until} />
       )}
     </div>
   )
