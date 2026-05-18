@@ -17,6 +17,8 @@ export interface Database {
           created_at: string
           has_issues: boolean | null
           balance: number | null
+          funding_type: string | null
+          funding_display: string | null
         }
         Insert: {
           id: string
@@ -30,6 +32,8 @@ export interface Database {
           created_at?: string
           has_issues?: boolean | null
           balance?: number | null
+          funding_type?: string | null
+          funding_display?: string | null
         }
         Update: {
           id?: string
@@ -43,6 +47,8 @@ export interface Database {
           created_at?: string
           has_issues?: boolean | null
           balance?: number | null
+          funding_type?: string | null
+          funding_display?: string | null
         }
         Relationships: []
       }

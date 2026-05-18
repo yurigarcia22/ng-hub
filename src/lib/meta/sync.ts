@@ -70,12 +70,14 @@ export async function runSync(triggeredBy: 'cron' | 'manual' = 'manual') {
       try {
         accountsById.set(rawAccount.id, rawAccount)
 
-        // Upsert conta com balance + has_issues
+        // Upsert conta com balance + has_issues + funding_type
         const bal = balances[rawAccount.id]
         const account = {
           ...transformAccount(rawAccount),
-          balance: bal?.balance ?? 0,
+          balance: bal?.balance ?? null,
           has_issues: bal?.hasIssues ?? false,
+          funding_type: bal?.fundingType ?? null,
+          funding_display: bal?.fundingDisplay ?? null,
         }
         await supabase.from('ad_accounts').upsert(account, { onConflict: 'id' })
 

@@ -98,13 +98,38 @@ function parseDisplayBalance(display?: string): number | null {
   return isNaN(v) ? null : v
 }
 
-// Busca saldo real + flag de problema (limite atingido)
-//  1. funding_source_details.amount (contas prepaid, type=2) — em centavos
-//  2. parse de funding_source_details.display_string (contas type=20 etc.) — formatado
-//  3. balance (último fallback) — em centavos
-// hasIssues = true quando amount_spent >= spend_cap (conta travada por limite)
+export type FundingType = 'PREPAID' | 'CREDIT_CARD' | 'BOLETO' | 'OTHER'
+
+// Detecta o tipo de funding a partir de funding_source_details.type / display_string
+// type 2 → PREPAID (saldo armazenado, tem campo amount)
+// type 1, 3-7 → CREDIT_CARD (VISA, Mastercard, Amex etc.)
+// type 20 → BOLETO (Brasil)
+// Outros → OTHER
+function detectFundingType(type: number | undefined, displayString: string | undefined): FundingType {
+  if (type === 2) return 'PREPAID'
+  if (type === 20) return 'BOLETO'
+  if (type !== undefined && [1, 3, 4, 5, 6, 7].includes(type)) return 'CREDIT_CARD'
+  // Fallback por display string
+  const d = (displayString ?? '').toUpperCase()
+  if (/VISA|MASTERCARD|AMEX|AMERICAN EXPRESS|DISCOVER|DINERS|JCB|HIPERCARD|ELO/.test(d)) return 'CREDIT_CARD'
+  if (/BOLETO/.test(d)) return 'BOLETO'
+  if (/SALDO|PREPAID/.test(d)) return 'PREPAID'
+  return 'OTHER'
+}
+
+// Busca saldo + tipo de funding + flag de problema (limite atingido)
+//  - Conta PREPAID (saldo): retorna balance real (funding.amount em centavos)
+//  - Conta CREDIT_CARD: balance = null (cobrança no cartão, não tem "saldo disponível")
+//  - hasIssues = true quando amount_spent >= spend_cap > 0
 export async function getAccountBalances(accountIds: string[]) {
-  const results: Record<string, { balance: number; currency: string; hasIssues: boolean }> = {}
+  const results: Record<string, {
+    balance: number | null
+    currency: string
+    hasIssues: boolean
+    fundingType: FundingType
+    fundingDisplay: string | null
+  }> = {}
+
   await Promise.allSettled(
     accountIds.map(async id => {
       try {
@@ -119,17 +144,26 @@ export async function getAccountBalances(accountIds: string[]) {
           { fields: 'balance,currency,funding_source_details,amount_spent,spend_cap' }
         )
 
-        let balance = 0
-        const amount = data.funding_source_details?.amount
-        if (amount && parseFloat(amount) > 0) {
-          balance = parseFloat(amount) / 100
-        } else {
+        const fundingType = detectFundingType(
+          data.funding_source_details?.type,
+          data.funding_source_details?.display_string,
+        )
+        const fundingDisplay = data.funding_source_details?.display_string ?? null
+
+        // Balance:
+        //  - PREPAID e BOLETO: têm saldo real disponível (parsed do display_string ou amount)
+        //  - CREDIT_CARD: NÃO tem saldo (cobrança automática) → null
+        //  - OTHER: null (não sabemos)
+        let balance: number | null = null
+        if (fundingType === 'PREPAID' || fundingType === 'BOLETO') {
+          const amount = data.funding_source_details?.amount
           const parsed = parseDisplayBalance(data.funding_source_details?.display_string)
-          if (parsed !== null && parsed > 0) {
+          if (amount && parseFloat(amount) > 0) {
+            balance = parseFloat(amount) / 100
+          } else if (parsed !== null) {
             balance = parsed
-          } else if (data.balance) {
-            const b = parseFloat(data.balance) / 100
-            if (b > 0) balance = b
+          } else {
+            balance = 0
           }
         }
 
@@ -141,9 +175,11 @@ export async function getAccountBalances(accountIds: string[]) {
           balance,
           currency: data.currency ?? 'BRL',
           hasIssues,
+          fundingType,
+          fundingDisplay,
         }
       } catch {
-        results[id] = { balance: 0, currency: 'BRL', hasIssues: false }
+        results[id] = { balance: null, currency: 'BRL', hasIssues: false, fundingType: 'OTHER', fundingDisplay: null }
       }
     })
   )

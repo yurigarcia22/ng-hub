@@ -19,8 +19,10 @@ interface AccountSummary {
   spend: number
   activeCampaigns: number
   totalCampaigns: number
-  balance?: number
+  balance?: number | null
   hasIssues?: boolean
+  fundingType?: string | null
+  fundingDisplay?: string | null
 }
 
 interface Props {

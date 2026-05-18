@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   // Buscar todas as contas
   const { data: accounts } = await supabase
     .from('ad_accounts')
-    .select('id, name, currency, status, business_id, business_name, balance, has_issues')
+    .select('id, name, currency, status, business_id, business_name, balance, has_issues, funding_type, funding_display')
     .order('name')
 
   if (!accounts || accounts.length === 0) return NextResponse.json([])
@@ -83,8 +83,10 @@ export async function GET(request: NextRequest) {
       spend: totals.spend,
       activeCampaigns,
       totalCampaigns: totals.totalCampaigns,
-      balance: Number(a.balance ?? 0),
+      balance: a.balance !== null && a.balance !== undefined ? Number(a.balance) : null,
       hasIssues: a.has_issues ?? false,
+      fundingType: (a as unknown as { funding_type: string | null }).funding_type ?? null,
+      fundingDisplay: (a as unknown as { funding_display: string | null }).funding_display ?? null,
     }
   })
 
