@@ -144,7 +144,8 @@ export default async function AdSetPage({ params, searchParams }: PageProps) {
             trend={trendPct(m.conversations, p.conversations)} highlight="emerald"
             sub={costPerConv > 0 ? `CPconv: ${fmtCurrency(costPerConv)}` : undefined}
             health={costPerConv > 0 ? costPerConvHealth(costPerConv) : undefined} />
-          <MetricCard label="Mensagens" value={fmtCompact(m.messages_sent)} highlight="violet" />
+          <MetricCard label="CTR" value={fmtPercent(m.ctr)} highlight="violet"
+            health={hasData ? ctrHealth(m.ctr) : undefined} />
           <MetricCard label="CPM" value={hasData ? fmtCurrency(m.cpm) : '—'}
             health={hasData ? cpmHealth(m.cpm) : undefined} highlight="amber"
             sub={`CTR ${fmtPercent(m.ctr)}`} />

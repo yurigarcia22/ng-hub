@@ -169,11 +169,11 @@ export default async function CampaignPage({ params, searchParams }: PageProps) 
             trend={trendPct(m.conversations, p.conversations)} highlight="emerald"
             sub={m.conversations > 0 ? `CPconv: ${fmtCurrency(costPerConv)}` : undefined}
             health={costPerConv > 0 ? costPerConvHealth(costPerConv) : undefined} />
-          <MetricCard label="Mensagens" value={fmtCompact(m.messages_sent)} highlight="violet"
-            sub="respondidas" />
+          <MetricCard label="CTR" value={fmtPercent(m.ctr)} highlight="violet"
+            health={hasData ? ctrHealth(m.ctr) : undefined} />
           <MetricCard label="CPM" value={hasData ? fmtCurrency(m.cpm) : '—'}
             health={hasData ? cpmHealth(m.cpm) : undefined}
-            sub={`CTR ${fmtPercent(m.ctr)}`} highlight="amber" />
+            sub={`CPC ${m.clicks > 0 ? fmtCurrency(m.spend / m.clicks) : '—'}`} highlight="amber" />
         </div>
       ) : template === 'leads' ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

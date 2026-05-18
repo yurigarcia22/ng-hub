@@ -303,9 +303,9 @@ export function ReportView({ data, pdfUrl, backUrl }: Props) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
           {template === 'wpp' && (
             <MiniKpi
-              label="Taxa de atendimento"
-              value={allCur.conversations > 0 ? `${Math.round((allCur.messages_sent / allCur.conversations) * 100)}%` : '—'}
-              sub={`${fmtNumber(allCur.messages_sent)} de ${fmtNumber(allCur.conversations)}`}
+              label="Alcance"
+              value={fmtCompact(allCur.reach)}
+              sub="pessoas únicas"
             />
           )}
           {template === 'leads' && (
@@ -367,7 +367,6 @@ export function ReportView({ data, pdfUrl, backUrl }: Props) {
                 {allCur.conversations > 0 && (
                   <>
                     <MetricRow label="Conversas WPP" cur={fmtNumber(allCur.conversations)} prev={fmtNumber(allPrev.conversations)} trend={<Trend cur={allCur.conversations} prev={allPrev.conversations} />} />
-                    <MetricRow label="Mensagens" cur={fmtNumber(allCur.messages_sent)} prev={fmtNumber(allPrev.messages_sent)} trend={<Trend cur={allCur.messages_sent} prev={allPrev.messages_sent} />} sub="respondidas" />
                     <MetricRow label="Custo/Conversa" cur={fmtCurrency(allDerived.cpconv, currency)} prev={fmtCurrency(prevDerived.cpconv, currency)} trend={<Trend cur={allDerived.cpconv} prev={prevDerived.cpconv} invert />} />
                   </>
                 )}

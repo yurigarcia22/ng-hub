@@ -122,11 +122,11 @@ export default function CampaignCard({ campaign, filters }: CampaignCardProps) {
   const primaryMetrics: MetricDef[] = (() => {
     if (template === 'wpp') {
       const costPerConv = campaign.spend > 0 && campaign.conversations > 0 ? campaign.spend / campaign.conversations : 0
-      const hasWpp = campaign.conversations > 0 || campaign.messages_sent > 0
+      const hasWpp = campaign.conversations > 0
       return [
         { label: 'Conversas', value: fmtCompact(campaign.conversations), muted: !hasWpp, trend: trendPct(campaign.conversations, campaign.prev_conversations) },
         { label: 'Custo/Conv', value: costPerConv > 0 ? fmtCurrency(costPerConv) : '—', muted: costPerConv === 0, health: costPerConv > 0 ? costPerConvHealth(costPerConv) : undefined, trendInvert: true },
-        { label: 'Mensagens', value: fmtCompact(campaign.messages_sent), muted: campaign.messages_sent === 0 },
+        { label: 'CTR', value: fmtPercent(campaign.ctr), muted: !hasData, health: hasData ? ctrHealth(campaign.ctr) : undefined },
         { label: 'CPM', value: hasData ? fmtCurrency(campaign.cpm) : '—', muted: !hasData, health: hasData ? cpmHealth(campaign.cpm) : undefined, trendInvert: true },
       ]
     }

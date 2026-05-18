@@ -184,10 +184,11 @@ export function ReportPdf({ data }: { data: ReportData }) {
                 <View><TrendText cur={allCur.conversations} prev={allPrev.conversations} /></View>
                 {allDerived.cpconv > 0 && <Text style={styles.kpiHint}>{fmtCurrency(allDerived.cpconv)}/conv</Text>}
               </View>
-              <View style={{ ...styles.kpiCard, ...styles.kpiCardEmerald }}>
-                <Text style={styles.kpiLabel}>Mensagens</Text>
-                <Text style={styles.kpiValue}>{fmtNumber(allCur.messages_sent)}</Text>
-                <Text style={styles.kpiHint}>respondidas</Text>
+              <View style={{ ...styles.kpiCard, ...styles.kpiCardAmber }}>
+                <Text style={styles.kpiLabel}>CTR médio</Text>
+                <Text style={styles.kpiValue}>{fmtPercent(allCur.ctr)}</Text>
+                <View><TrendText cur={allCur.ctr} prev={allPrev.ctr} /></View>
+                <Text style={styles.kpiHint}>CPM {fmtCurrency(allCur.cpm)}</Text>
               </View>
             </>
           ) : template === 'leads' ? (
@@ -271,7 +272,6 @@ export function ReportPdf({ data }: { data: ReportData }) {
                     {allCur.conversations > 0 && (
                       <>
                         <MetricRow label="Conversas WPP" cur={fmtNumber(allCur.conversations)} prev={fmtNumber(allPrev.conversations)} curN={allCur.conversations} prevN={allPrev.conversations} />
-                        <MetricRow label="Mensagens" cur={fmtNumber(allCur.messages_sent)} prev={fmtNumber(allPrev.messages_sent)} curN={allCur.messages_sent} prevN={allPrev.messages_sent} />
                         <MetricRow label="Custo/Conversa" cur={fmtCurrency(allDerived.cpconv)} prev={fmtCurrency(prevDerived.cpconv)} curN={allDerived.cpconv} prevN={prevDerived.cpconv} invert />
                       </>
                     )}
@@ -349,8 +349,8 @@ export function ReportPdf({ data }: { data: ReportData }) {
                       <Text style={styles.campaignMetricValue}>{c.derived.cpconv > 0 ? fmtCurrency(c.derived.cpconv) : '—'}</Text>
                     </View>
                     <View style={styles.campaignMetric}>
-                      <Text style={styles.campaignMetricLabel}>Mensagens</Text>
-                      <Text style={styles.campaignMetricValue}>{fmtNumber(c.m.messages_sent)}</Text>
+                      <Text style={styles.campaignMetricLabel}>Alcance</Text>
+                      <Text style={styles.campaignMetricValue}>{fmtNumber(c.m.reach)}</Text>
                     </View>
                   </>
                 ) : c.template === 'leads' ? (

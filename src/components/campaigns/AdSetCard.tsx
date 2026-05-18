@@ -69,7 +69,7 @@ export default function AdSetCard({ adSet, campaignId, filters }: AdSetCardProps
       return [
         { label: 'Conversas', value: fmtCompact(adSet.conversations), muted: adSet.conversations === 0 },
         { label: 'Custo/Conv', value: costPerConv > 0 ? fmtCurrency(costPerConv) : '—', muted: costPerConv === 0, health: costPerConv > 0 ? costPerConvHealth(costPerConv) : undefined },
-        { label: 'Mensagens', value: fmtCompact(adSet.messages_sent), muted: adSet.messages_sent === 0 },
+        { label: 'CTR', value: fmtPercent(adSet.ctr), health: ctrHealth(adSet.ctr) },
         { label: 'CPM', value: fmtCurrency(adSet.cpm), health: cpmHealth(adSet.cpm) },
       ]
     }
